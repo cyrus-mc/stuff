@@ -5,126 +5,168 @@
 	Implementation of classes used for storage of user information and page 
 	level access control
 
-	$Author: cyrus $
-	$Date: 2004/01/23 01:38:07 $
-	$Revision: 1.4 $
+	$Author: $
+	$Date: $
+	$Revision: $
 */
+
+define(__DEFAULTPASSWORDMODE__, "ENCRYPTED");
+
+function __autoload($class_name) {
+	   require_once 'dbase/' . $class_name . '.php';
+}
 
 // class used to store information about currently logged in user
 class UserBean {
-   
+  	private $uname, $uid, $pmode = __DEFAULTPASSWORDMODE__;
+	private $udata = array();
+	private $database;
+
+	public function setDB($db) {
+		$this->database = $db;
+	}
    /*
-      Default constructor.  Fields set in user_info are saved in this
+      Default constructor.
+
+		Set username and userID
    */
-   function UserBean(&$user_info) {
-      foreach ($user_info as $key => $value) {
-	      $this->$key = $value;
-      }
-   }
+	function __construct($uname, $uid) {
+		$this->uname = $uname;
+		$this->uid = $uid;
+	}
+
+	public function getUserName() { return $this->uname; } 
+
+	public function getDatabase() { return $this->database; }
 
    /*
       Retrieve field from this array if it exists, else returns FALSE 
    */
-   function getField($field_name) {
-   	if (isset($this->$field_name)) {
-			return $this->$field_name;
+	public function getValue($key) {
+		if (isset($this->udata[$key])) {
+			return $this->udata[$key];
 		} else {
 			return FALSE;
 		}
-   }
+	}
 
    /*
-      Change value associated with supplied key. If key doesn't exist
-      it will be added. Returns new value
+      Set the value associated with supplied key. If key doesn't exist
+      it will be added.
    */
-   function setField($key, $value) {
-		$this->$key = $value;
-		return $this->$key;
-   }
+	public function setValue($key, $value) {
+		$this->udata[$key] = $value;
+	}
 
 	/*
 		Remove key and associated value from this.  If key doesn't exist
 		return FALSE, else TRUE 
    */
-	function removeField($key) {
-		if (isset($this->$key)) {
-			unset($this->$key);
+	public function removeValue($key) {
+		if (isset($this->udata[$key])) {
+			unset($this->udata[$key]);
 			return TRUE;
 		} else {
 			return FALSE;
 		}
 	}
 
+	/* 
+		Set the password mode (either ENCRYPTED or UNENCRYPTED)
+
+		Parameter: mode
+		values: e = ENCRYPTED, p = UNENCRYPTED
+	*/
+	public function setPasswordMode($mode) {
+		if ($mode == "e") {
+			$this->pmode = "ENCRYPTED";
+		} elseif ($mode == "p") {
+			$this->pmode = "UNENCRYPTED";
+		} else {
+			die("Invalid password mode : " . $mode);
+		}
+		return $this->pmode;
+	}
+	
 	/*
-      Print the current value associated with the UserBean
+		Set the user password (this is the database user password)
+	*/
+	public function setPassword($npasswd) {
+		$sql = "ALTER USER " . $this->uname . " ENCRYPTED PASSWORD '" . $npasswd . "'";
+	}
+
+	/*
+      Print the current values associated with the UserBean
    */
-   function printThis() {
+   public function printThis() {
 		print_r($this);
+		print_r($this->udata);
    }
 }
 
 // default permission level and redirect page
-define(__DEFAULTPERMISSION__, 100);
-define(__REDIRECTPAGE__, "error.html");
+define(__REDIRECTPAGE__, "/access_denied.html");
 
 /* 
 	Class used to authenticate user on a page per page basis.
-	plevel = permission level required to access this page
-	ulevel = users permission level
+	pcontext = context of the page. This is compared with the uname to determine
+		        permission
 */
 class Authenticate {
-   var $pageLevel, $userLevel, $authorized;
+   var $pcontext, $epage, $authorized = 1;
+	var $ubean;
 
 	/*
 		Default constructor.  Sets page permission level and user permission
 		level to this.
 	*/
-   function Authenticate($plevel = __DEFAULTPERMISSION__, $ulevel = 0) {
-      $this->pageLevel = $plevel;
-      $this->userLevel = $ulevel;
-      $this->check();
+   function __construct($pcontext, $epage = __REDIRECTPAGE__) {
+		if (strlen($pcontext) != 0) {
+			$this->pcontext = substr($pcontext, 2);
+		} else
+			$this->pcontext = $pcontext;
+
+		$this->epage = $epage;
+
+		/* re-construct userBean, if it doesn't exist user has not logged in */
+		$this->ubean = unserialize($_SESSION["ubean"]);
+		if (!$this->ubean) {
+			header("Location: " . $epage);
+			session_destroy();
+		}
+      $this->checkAuth();
    }
 
 	/*
 		Check to see if user permissions are good enough to access this page
-		(pageLevel = userLevel)
+		(pcontext = uname)
 	*/
-   function check() {
-      if ($this->pageLevel == $this->userLevel) {
-         $this->authorized = 1;
-      } else {
-         $this->authorized = 0;
-      }
-      // return authorized value
-      return $this->authorized;
+   public function checkAuth() {
+		if (strlen($this->pcontext) != 0 && $this->pcontext != $this->ubean->getUserName()) {
+			$this->authorized = 0;
+			header("Location: " . $this->epage);
+		}
    }
 
 	/*
+		Retrieve the userBean associated with this authentication request
 	*/
-	function setPagePerm($value) {
-		$this->pageLevel = $value;
+	public function getUserBean() {
+		return $this->ubean;
 	}
 
 	/*
+		Set the page context for this authentication request
 	*/
-	function setUserPerm($value) {
-		$this->userLevel = $value;
+	public function setPageContext($context) {
+		$this->pcontext = $context;
 	}
-	
+
 	/*
 		Return the authentication flags (1 = auth, 0 = denied)
 	*/
-   function getAuthorized() {
+   public function getAuthorized() {
       return $this->authorized;
-   }
-
-	/*
-		Redirect user if authorixation denied
-	*/
-   function reDirect() {
-     if (!$this->authorized) {
-        header("Location: " . __REDIRECTPAGE__);
-     }
    }
 }
 ?>
