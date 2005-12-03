@@ -2,57 +2,84 @@
 /*
    vim:ts=3:sw=3:
 
-   Implementation of MySQL database access class.
+   Implementation of PostgreSQL database access class. Inherits base db_common
+	class.
 
-   $Author: cyrus $
-   $Date: 2004/01/22 21:15:07 $
-   $Revision: 1.3 $
+   $Author: $
+   $Date: $
+   $Revision: $
 */
 
 // include base class
-include 'db_common.php';
+require_once 'db_common.php';
 
-class DB_postgres extends DB_common {
+class db_postgres extends db_common {
    
-   var $link = NULL; // link resource identifier
-   var $result = NULL; // result set resource
-   var $current_row = NULL; // associative array of row from result set
+   private $result = NULL; // result set resource
+   private $current_row = NULL; // associative array of row from result set
 
-   /*
-      Default constructor.  Parameters have default values so are not
-      required when constructing
-   */
-   function DB_postgres($db_host = NULL, $db_port = NULL, $db_name = NULL,
-                        $db_user = NULL, $db_pass = NULL) {
-		// call base class constructor
-      $this->DB_common($db_host, $db_port, $db_name, $db_user, $db_pass);
-   }
+	// common database specific SQL commands
+	private $sql_commands = array('create_database' => 'CREATE DATABASE %s',
+    		 		     		    'drop_database' => 'DROP DATABSE %s',
+	   							 'create_user' => 'CREATE USER %s WITH PASSWORD %s',
+	   							 'drop_user' => 'DROP USER %s');
+
+	/* default construction */
+	//function __construct($db_host, $db_port, $db_name, $db_user, $db_pass) {
+		// call parent constructor
+   //	parent::__construct($db_host, $db_port, $db_name, $db_user, $db_pass);
+	//}
+
+	/* DEFINE ABSTRACT FUNCTIONS */
 
 	/*
 		Connect to specified database or die (will change this)
    */
-   function connect() {
-		 $this->link = pg_connect("host=".$this->db_host." dbname=".
+   public function connect() {
+		 $this->link = @pg_connect("host=".$this->db_host." dbname=".
 		 			$this->db_name." user=".$this->db_user." password=".
-					$this->db_pass." port=".$this->db_port)
-					or die("can not connect to server");
-   }
+					$this->db_pass." port=".$this->db_port);
+	}
 
-	/*
-		Execute current SQL statement and return reference to result or
-		die if query fails (will change this)
-	*/
-   function &executeSQL() {
-      $this->result = mysql_query($this->sql_statement, $this->link) or 
-                   die("Query failed : " . mysql_error());
-      return $this->result;
-   }
+	public function query($sql) {
+		if ($this->link == FALSE)
+			die('** INVALID CONNECTION **');
+
+		$this->sql_statement = $sql;
+		$this->result = pg_query($this->link, $sql) or die("Error: " . pg_last_error());
+		return $this->result;
+	}
+
+	public function createDB($name) {
+		$this->query(sprintf($this->sql_commands['create_database'], $name));
+	}
+
+	public function dropDB($name) {
+		$this->query(sprintf($this->sql_commands['drop_database'], $name));
+	}
+
+	public function createUser($name, $pword) {
+		$this->query(sprintf($this->sql_commands['create_user'], $name, $pword));
+	}
+
+	public function dropUser($name) {
+		$this->query(sprintf($this->sql_commands['drop_user'], $name));
+	}
+
+	/* END OF ABSTRACT FUNCTIONS */
+
+	function getStatus() {
+		if ($this->link)
+			return TRUE;
+		else
+			return FALSE;
+	}
 
 	/*
 		Fetch row array and return reference to it
 	*/
    function &getRow() {
-      $this->current_row = mysql_fetch_array($this->result, MYSQL_ASSOC);
+      $this->current_row = pg_fetch_assoc($this->result);
       return $this->current_row;
    }
 
@@ -61,7 +88,7 @@ class DB_postgres extends DB_common {
 	*/
    function seekRow($row = 0) { 
       if ($row >= 0) 
-         mysql_data_seek($this->result, $row);
+         pg_result_seek($this->result, $row);
       else 
          echo "Negative seek value";
       
@@ -71,7 +98,7 @@ class DB_postgres extends DB_common {
 		Throw away current result set (free memory)
 	*/
    function freeResultSet() {
-		if ($this->result)
+		if (get_resource_type($this->result) == "pgsql result")
       	pg_free_result($this->result);
    }
 	
@@ -83,8 +110,7 @@ class DB_postgres extends DB_common {
       $this->freeResultSet();
       $this->current_row = NULL;
 
-		$stat = pg_connection_status($this->link);
-		if ($stat == PGSQL_CONNECTION_OK)
+		if (get_resource_type($this->link) == "pgsql link")
       	pg_close($this->link);
    }
 }

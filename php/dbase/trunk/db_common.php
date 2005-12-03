@@ -4,90 +4,87 @@
 
    Implementation of base level class for database access
 
-   $Author: cyrus $
-   $Date: 2004/01/22 21:14:35 $
-   $Revision: 1.3 $
+   $Author: $
+   $Date: $
+   $Revision: $
 */
 
-// define some defaults
-define(__DEFAULTHOST__, "localhost");
-define(__DEFAULTPORT__, 3306);
-define(__DEFAULTDB__, "mysql");
-define(__DEFAULTUSER__, "root");
-define(__DEFAULTPASS__, "nothing");
+abstract class db_common {
 
-class DB_common {
-	
-   var $db_host, $db_name, $db_user, $db_pass;
-   var $sql_statement;
+	protected $link = NULL; // link resource identifier
+   protected $db_host, $db_name, $db_user, $db_pass;
+   protected $sql_statement;
 
    /*
       Default constructor.  Paramenters have default values so are not
       required when constructing
    */
-   function DB_common($db_host = __DEFAULTHOST__, $db_port = __DEFAULTPORT__,
-                      $db_name = __DEFAULTDB__, $db_user = __DEFAULTUSER__, 
-                      $db_pass = __DEFAULTPASS__) {
-      $this->db_host = $db_host;
-      $this->db_name = $db_name;
-      $this->db_pass = $db_pass;
-      $this->db_user = $db_user;
+	function __construct($db_host, $db_port, $db_name, $db_user, $db_pass) {
+		$this->db_host = $db_host;
+		$this->db_name = $db_name;
+		$this->db_user = $db_user;
+		$this->db_pass = $db_pass;
+		// check supplied port is a numeric value
+		if (ereg("^([1-9][0-9]*$)", $db_port))
+			$this->db_port = $db_port;
+		else
+			die("Invalid port: " . $db_port . " (value must be between 0 and 65535)");
+	}
 
-      // check supplied port is a numeric value (or atleast starts with one)
-      if (ereg("^([1-9][0-9]*)", $db_port)) 
-         $this->db_port = $db_port;
-      else {
-         //echo "Supplied port not number, setting to default (3306)\n";
-         $this->db_port = __DEFAULTPORT__;
-      }
-   }
+	abstract public function connect();
+	abstract public function query($sql); 
+	abstract public function createDB($name);
+	abstract public function dropDB($name);
+	abstract public function createUser($name, $pword);
+	abstract public function dropUser($name);
+	abstract public function disconnect();
 
    /*
       Retrieve host name
    */
-   function getHost() {
+   public function getDBhost() {
       return $this->db_host;
    }
 
    /*
       Retrieve database name
    */
-   function getDBName() {
+   public function getDBname() {
       return $this->db_name;
    }
 
    /*
       Retrieve username
    */
-   function getUser() {
+   public function getDBuser() {
       return $this->db_user;
    }
 
    /*
       Retrieve password
    */
-   function getPassword() {
+   public function getDBpassword() {
       return $this->db_pass;
    }
 
    /*
       Retrieve port number
    */
-   function getPort() {
+   public function getDBport() {
       return $this->db_port;
    }
 
    /*
       Retrieve the current SQL statement
    */
-   function getSQL() {
+   public function getSQL() {
       return $this->sql_statement;
    }
 
    /*
       Return database connection string
    */
-   function getConnectString() {
+   public function getConnectString() {
       // form the connection string
       $str = $this->db_user . ":" . $this->db_pass . "@" . $this->db_name
              . "." . $this->db_host . ":" . $this->db_port;
@@ -97,7 +94,7 @@ class DB_common {
    /*
       Set the current SQL statement
    */
-   function setSQL($sql) {
+   public function setSQL($sql) {
       $this->sql_statement = $sql;
    }
 }

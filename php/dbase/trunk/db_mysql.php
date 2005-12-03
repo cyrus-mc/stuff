@@ -4,10 +4,12 @@
 
    Implementation of MySQL database access class.
 
-   $Author: cyrus $
-   $Date: 2004/01/22 21:15:07 $
-   $Revision: 1.3 $
+   $Author: $
+   $Date: $
+   $Revision: $
 */
+
+/* OUT OF DATE. CHECK POSTGRESQL CLASS TO SEE WHAT CHANGES ARE NEEDED */
 
 // include base class
 include 'db_common.php';
