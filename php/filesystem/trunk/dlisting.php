@@ -1,23 +1,10 @@
 <?
+require_once 'common/functions.php';
+require_once 'authentication/authentication.php';
+
+session_start();
+$auth = new Authenticate($baseURL);
 /*
-Directory Listing Script - Version 2
-====================================
-Script Author: Ash Young <ash@evoluted.net>. www.evoluted.net
-Layout: Manny <manny@tenka.co.uk>. www.tenka.co.uk
-
-REQUIREMENTS
-============
-This script requires PHP and GD2 if you wish to use the 
-thumbnail functionality.
-
-INSTRUCTIONS
-============
-1) Unzip all files 
-2) Edit this file, making sure everything is setup as required.
-3) Upload to server
-4) ??????
-5) Profit!
-
 CONFIGURATION
 =============
 Edit the variables in this section to make the script work as
@@ -58,6 +45,7 @@ matches what is entered below then it is now shown.
 $hide = array(
 				'dlf',
 				'index.php',
+				'dlisting.php',
 				'Thumbs',
 				'.htaccess',
 				'.htpasswd'
@@ -132,6 +120,7 @@ $filetypes = array (
 				'eps' => 'eps.gif',
 				'gz' => 'archive.png',
 				'asc' => 'sig.gif',
+				'mp3' => 'video.gif',
 			);
 			
 /*
@@ -284,19 +273,19 @@ $dirs = @array_values($dirs); $files = @array_values($files);
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
 <title>Directory Listing of <?=dirname($_SERVER['PHP_SELF']).'/'.$leadon;?></title>
-<link rel="stylesheet" type="text/css" href="dlf/styles.css" />
+<link rel="stylesheet" type="text/css" href="<?= $baseURL ?>/styles/mstyle.css" />
 <?
 if($showthumbnails) {
 ?>
 <script language="javascript" type="text/javascript">
 <!--
 function o(n, i) {
-	document.images['thumb'+n].src = 'dlf/i.php?f='+i;
+	document.images['thumb'+n].src = '/php/filesystem/thumbnail.php?f='+i;
 
 }
 
 function f(n) {
-	document.images['thumb'+n].src = 'dlf/trans.gif';
+	document.images['thumb'+n].src = '/images/trans.gif';
 }
 //-->
 </script>
@@ -351,7 +340,7 @@ function f(n) {
 	$class = 'b';
 	if($dirok) {
 	?>
-	<div><a href="<?=$_SERVER['PHP_SELF'].'?dir='.urlencode($dotdotdir);?>" class="<?=$class;?>"><img src="dlf/dirup.png" alt="Folder" /><strong>..</strong> <em>-</em> <?=date ("M d Y h:i:s A", filemtime($dotdotdir));?></a></div>
+	<div><a href="<?=$_SERVER['PHP_SELF'].'?dir='.urlencode($dotdotdir);?>" class="<?=$class;?>"><img src="<?= $baseURL ?>/images/dirup.png" alt="Folder" /><strong>..</strong> <em>-</em> <?=date ("M d Y h:i:s A", filemtime($dotdotdir));?></a></div>
 	<?
 		if($class=='b') $class='w';
 		else $class = 'b';
@@ -359,7 +348,7 @@ function f(n) {
 	$arsize = sizeof($dirs);
 	for($i=0;$i<$arsize;$i++) {
 	?>
-	<div><a href="<?=$_SERVER['PHP_SELF'].'?dir='.urlencode($leadon.$dirs[$i]);?>" class="<?=$class;?>"><img src="dlf/folder.png" alt="<?=$dirs[$i];?>" /><strong><?=$dirs[$i];?></strong> <em>-</em> <?=date ("M d Y h:i:s A", filemtime($leadon.$dirs[$i]));?></a></div>
+	<div><a href="<?=$_SERVER['PHP_SELF'].'?dir='.urlencode($leadon.$dirs[$i]);?>" class="<?=$class;?>"><img src="<?= $baseURL ?>/images/folder.png" alt="<?=$dirs[$i];?>" /><strong><?=$dirs[$i];?></strong> <em>-</em> <?=date ("M d Y h:i:s A", filemtime($leadon.$dirs[$i]));?></a></div>
 	<?
 		if($class=='b') $class='w';
 		else $class = 'b';	
@@ -373,7 +362,7 @@ function f(n) {
 		$thumb = '';
 		
 		if($showthumbnails && in_array($ext, $supportedimages)) {
-			$thumb = '<span><img src="dlf/trans.gif" alt="'.$files[$i].'" name="thumb'.$i.'" /></span>';
+			$thumb = '<span><img src="<?= $baseURL ?>/images/trans.gif" alt="'.$files[$i].'" name="thumb'.$i.'" /></span>';
 			$thumb2 = ' onmouseover="o('.$i.', \''.urlencode($leadon . $files[$i]).'\');" onmouseout="f('.$i.');"';
 			
 		}
@@ -393,7 +382,7 @@ function f(n) {
 		}
 
 	?>
-	<div><a href="<?=$fileurl;?>" class="<?=$class;?>"<?=$thumb2;?>><img src="dlf/<?=$icon;?>" alt="<?=$files[$i];?>" /><strong><?=$filename;?></strong> <em><?=round(filesize($leadon.$files[$i])/1024);?>KB</em> <?=date ("M d Y h:i:s A", filemtime($leadon.$files[$i]));?><?=$thumb;?></a></div>
+	<div><a href="<?=$fileurl;?>" class="<?=$class;?>"<?=$thumb2;?>><img src="<?= $baseURL ?>/images/<?=$icon;?>" alt="<?=$files[$i];?>" /><strong><?=$filename;?></strong> <em><?=round(filesize($leadon.$files[$i])/1024);?>KB</em> <?=date ("M d Y h:i:s A", filemtime($leadon.$files[$i]));?><?=$thumb;?></a></div>
 	<?
 		if($class=='b') $class='w';
 		else $class = 'b';	
