@@ -18,67 +18,63 @@ class db_postgres extends db_common {
    private $result = NULL; // result set resource
    private $current_row = NULL; // associative array of row from result set
 
-	// common database specific SQL commands
-	private $sql_commands = array('create_database' => 'CREATE DATABASE %s',
-    		 		     		    'drop_database' => 'DROP DATABSE %s',
-	   							 'create_user' => 'CREATE USER %s WITH PASSWORD %s',
-	   							 'drop_user' => 'DROP USER %s');
-
-	/* default construction */
-	//function __construct($db_host, $db_port, $db_name, $db_user, $db_pass) {
-		// call parent constructor
-   //	parent::__construct($db_host, $db_port, $db_name, $db_user, $db_pass);
-	//}
+	/* over-write sql_commands array if needed
+	public function __construct($connection_string) {
+		parent::__construct($connection_string);
+		$this->sql_commands['create_database'] = "SQL COMMAND TO CREATE DB";
+	}
+	*/
 
 	/* DEFINE ABSTRACT FUNCTIONS */
 
 	/*
-		Connect to specified database or die (will change this)
+		Connect to specified database
    */
    public function connect() {
-		 $this->link = @pg_connect("host=".$this->db_host." dbname=".
+		/* pg_connect returns connection resource on success, FALSE on failure */
+		$this->link = @pg_connect("host=".$this->db_host." dbname=".
 		 			$this->db_name." user=".$this->db_user." password=".
 					$this->db_pass." port=".$this->db_port);
+
+		if ($this->link)
+			return TRUE; /* connection successfull */
+		
+		return FALSE; /* connection failed */
 	}
 
-	public function query($sql) {
-		if ($this->link == FALSE)
-			die('** INVALID CONNECTION **');
+	public function query($sql, $reconnect=FALSE) {
+		/* make sure we are connected and the connection status is good */
+		if ($this->getStatus() == PGSQL_CONNECTION_BAD) {
+			echo "re-establishing connection";
+			if ($reconnect) {
+					if (! $this->connect()) {
+						echo "reconnect failed";
+						return FALSE;
+					}
+			} else {
+				echo "connection dead, reconnect = false";
+				return FALSE;
+			}
+		}
 
 		$this->sql_statement = $sql;
 		$this->result = pg_query($this->link, $sql) or die("Error: " . pg_last_error());
 		return $this->result;
 	}
 
-	public function createDB($name) {
-		$this->query(sprintf($this->sql_commands['create_database'], $name));
-	}
-
-	public function dropDB($name) {
-		$this->query(sprintf($this->sql_commands['drop_database'], $name));
-	}
-
-	public function createUser($name, $pword) {
-		$this->query(sprintf($this->sql_commands['create_user'], $name, $pword));
-	}
-
-	public function dropUser($name) {
-		$this->query(sprintf($this->sql_commands['drop_user'], $name));
-	}
-
 	/* END OF ABSTRACT FUNCTIONS */
 
 	function getStatus() {
-		if ($this->link)
-			return TRUE;
-		else
-			return FALSE;
+		if (! $this->link)
+			return PGSQL_CONNECTION_BAD;
+
+		return pg_connection_status($this->link);
 	}
 
 	/*
 		Fetch row array and return reference to it
 	*/
-   function &getRow() {
+   function getRow() {
       $this->current_row = pg_fetch_assoc($this->result);
       return $this->current_row;
    }
@@ -88,10 +84,9 @@ class db_postgres extends db_common {
 	*/
    function seekRow($row = 0) { 
       if ($row >= 0) 
-         pg_result_seek($this->result, $row);
+         return pg_result_seek($this->result, $row);
       else 
-         echo "Negative seek value";
-      
+     		return FALSE; 
    }
 
 	/*
@@ -99,7 +94,7 @@ class db_postgres extends db_common {
 	*/
    function freeResultSet() {
 		if (get_resource_type($this->result) == "pgsql result")
-      	pg_free_result($this->result);
+      	return pg_free_result($this->result);
    }
 	
 	/*
@@ -110,8 +105,8 @@ class db_postgres extends db_common {
       $this->freeResultSet();
       $this->current_row = NULL;
 
-		if (get_resource_type($this->link) == "pgsql link")
-      	pg_close($this->link);
+		if ($this->getStatus() == PGSQL_CONNECTION_OK)
+      	return pg_close($this->link);
    }
 }
 ?>

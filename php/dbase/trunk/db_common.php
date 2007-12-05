@@ -12,31 +12,32 @@
 abstract class db_common {
 
 	protected $link = NULL; // link resource identifier
-   protected $db_host, $db_name, $db_user, $db_pass;
-   protected $sql_statement;
+   protected $db_host, $db_name, $db_user, $db_pass, $db_port;
+   protected $connection_string, $sql_statement;
 
+	// common database specific SQL commands
+	protected $sql_commands = array('create_database' => 'CREATE DATABASE %s',
+									'drop_database' => 'DROP DATABASE %s',
+									'create_user' => ' CREATE_USER %s WITH PASSWORD %s',
+									'drop_user' => 'DROP USER %s');
    /*
-      Default constructor.  Paramenters have default values so are not
-      required when constructing
+      Default constructor.
+
+		String format - username:password@dbname.host:port
    */
-	function __construct($db_host, $db_port, $db_name, $db_user, $db_pass) {
-		$this->db_host = $db_host;
-		$this->db_name = $db_name;
-		$this->db_user = $db_user;
-		$this->db_pass = $db_pass;
+	function __construct($connection_string) {
+
+		$this->connection_string = $connection_string;
+
+		list($this->db_user, $this->db_pass, $this->db_name, $this->db_host, $this->db_port) = preg_split("/:|@|\./", $connection_string);
+
 		// check supplied port is a numeric value
-		if (ereg("^([1-9][0-9]*$)", $db_port))
-			$this->db_port = $db_port;
-		else
+		if (! ereg("^([1-9][0-9]{1,4})", $this->db_port))
 			die("Invalid port: " . $db_port . " (value must be between 0 and 65535)");
 	}
 
 	abstract public function connect();
 	abstract public function query($sql); 
-	abstract public function createDB($name);
-	abstract public function dropDB($name);
-	abstract public function createUser($name, $pword);
-	abstract public function dropUser($name);
 	abstract public function disconnect();
 
    /*
@@ -84,11 +85,8 @@ abstract class db_common {
    /*
       Return database connection string
    */
-   public function getConnectString() {
-      // form the connection string
-      $str = $this->db_user . ":" . $this->db_pass . "@" . $this->db_name
-             . "." . $this->db_host . ":" . $this->db_port;
-      return $str; 
+   public function getConnectionString() {
+		return $this->connection_string;
    }
 
    /*
@@ -97,6 +95,24 @@ abstract class db_common {
    public function setSQL($sql) {
       $this->sql_statement = $sql;
    }
+
+	/* execute common SQL commands */
+	public function createDB($name) {
+		$this->query(sprintf($this->sql_commands['create_database'], $name));
+	}
+
+	public function dropDB($name) {
+		$this->query(sprintf($this->sql_commands['drop_database'], $name));
+	}
+
+	public function createUser($name, $pword) {
+		$this->query(sprintf($this->sql_commands['create_user'], $name, $pword));
+	}
+
+	public function dropUser($name) {
+		$this->query(sprintf($this->sql_commands['drop_user'], $name));
+	}
+	/* end common SQL commands */
 }
 
 ?>
