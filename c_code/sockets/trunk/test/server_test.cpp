@@ -1,4 +1,4 @@
-#include <iostream.h>
+#include <iostream>
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -7,6 +7,8 @@
 
 #include "server_socket.h"
 #include "socket_exception.h"
+
+using namespace std;
 
 int main(void) {
 	char *data;

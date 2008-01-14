@@ -6,7 +6,7 @@
 	$Revision: 1.1 $
 */
 
-#include <iostream.h>
+#include <iostream>
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -17,6 +17,8 @@
 #include "client_socket.h"
 #include "socket_exception.h"
 
+using namespace std;
+
 int main(void) {
 	int file_d;
 	struct hostent *host;
@@ -24,7 +26,6 @@ int main(void) {
 	file_d = open("test_file", O_RDONLY);
 	try {
 		ClientSocket sock("127.0.0.1", 2000); 
-		getchar();
 		sock.write(file_d);
 	} catch (SocketException e) {
 		cout << e.description() << endl;

@@ -1,4 +1,4 @@
-#include <iostream.h>
+#include <iostream>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -6,6 +6,8 @@
 
 #include "client_socket.h"
 #include "socket_exception.h"
+
+using namespace std;
 
 ClientSocket::ClientSocket(char *host, unsigned short port) {
 

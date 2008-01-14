@@ -3,7 +3,7 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <unistd.h>
-#include <iostream.h>
+#include <iostream>
 #include <sys/sendfile.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -11,6 +11,8 @@
 
 #include "socket.h" 
 #include "socket_exception.h"
+
+using namespace std;
 
 /*
  * Default constructor
