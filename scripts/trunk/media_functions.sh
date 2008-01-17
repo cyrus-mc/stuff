@@ -17,8 +17,7 @@ MEDIA_DIR=~/mystuff/media
 MODE= 			# variable used to hold action
 OUTPUT=			# variable used to hold output mode
 INPUT=			# variable used to hold input mode
-FILES=			# variable used to hold files to operate on
-FUNCTION=		# variable used to hold function pointer
+FILES=			# variable used to hold files to operate on FUNCTION=		# variable used to hold function pointer
 ERROR=0
 
 # parameters for decoding, encoding, burning, etc
@@ -30,7 +29,7 @@ CDRECORD_DOPTS="dev=/dev/hdd -eject speed=8"
 MKISOFS_OPTS="-R"
 
 usage() {
-	echo 'usage: audio.sh -a [convert||burn||rip] -i [wav||mp3] -o [wav||mp3]'
+	echo 'usage: media_functions.sh -a [convert||burn||rip||play] -i [wav||mp3] -o [wav||mp3]'
 	ERROR=1
 }
 
@@ -83,9 +82,7 @@ convertwavmp3() {
 
 # burn mp3 files into a audio CD (convert from MP3 to WAV)
 burnmp3wav() {
-
-	local wav_files=
-
+local wav_files= 
 	# convert files first
 	convertmp3wav $*
 
@@ -196,6 +193,11 @@ checkdir () {
 
 }
 
+# verify that some parameter options were specified
+if [ $# -eq 0 ]; then
+	usage
+fi
+
 # loop through parameters and decide what to do
 while getopts a:i:o:f: option
 do
@@ -205,7 +207,7 @@ do
 			[ $OPTARG = "play" ] || [ $OPTARG = "rip" ] && MODE=$OPTARG
 
 			if [ -z $MODE ]; then
-				echo "invalid mode specified \(valid: convert, burn\)"
+				echo "invalid mode specified (valid: convert, burn, play or rip)"
 				usage
 			fi
 			FUNCTION=$MODE
@@ -214,7 +216,7 @@ do
 			[ $OPTARG = "wav" ] || [ $OPTARG = "mp3" ] && INPUT=$OPTARG
 
 			if [ -z $INPUT ]; then
-				echo "invalid input mode specified \(valid: wav, mp3\)"
+				echo "invalid input mode specified (valid: wav, mp3)"
 				usage
 			fi
 			FUNCTION=${FUNCTION}${INPUT}
@@ -223,7 +225,7 @@ do
 			[ $OPTARG = "wav" ] || [ $OPTARG = "mp3" ] && OUTPUT=$OPTARG
 
 			if [ -z $OUTPUT ]; then
-				echo "invalid output mode specified \(valid: wav, mp3\)"
+				echo "invalid output mode specified (valid: wav, mp3)"
 				usage
 			fi
 			FUNCTION=${FUNCTION}${OUTPUT}
