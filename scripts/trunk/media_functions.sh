@@ -17,71 +17,125 @@ MEDIA_DIR=~/mystuff/media
 MODE= 			# variable used to hold action
 OUTPUT=			# variable used to hold output mode
 INPUT=			# variable used to hold input mode
-FILES=			# variable used to hold files to operate on FUNCTION=		# variable used to hold function pointer
+FILES=			# variable used to hold files to operate on 
+FUNCTION=		# variable used to hold function pointer
 ERROR=0
 
-# parameters for decoding, encoding, burning, etc
-LAME_DOPTS="--decode"
-LAME_EOPTS=
+# parameters for decoding, encoding, ripping and burning
+DEC_PROG="mplayer"
+DEC_WAV_OPTS="-ao pcm:waveheader:file="
+
+ENC_MP3_PROG="lame"
+ENC_MP3_OPTS="-V 0 -h -b 192 --vbr-new"
+
+ENC_OGG_PROG="oggenc"
+ENC_OGG_OPTS="-b 192 -q 5"
+
+PLAY_PROG="mplayer"
+PLAY_PROG_OPTS=""
+
 CDPARANOIA_OPTS="-B"
 CDRECORD_AOPTS="dev=/dev/hdd -eject speed=8 -pad -audio"
 CDRECORD_DOPTS="dev=/dev/hdd -eject speed=8"
 MKISOFS_OPTS="-R"
 
 usage() {
-	echo 'usage: media_functions.sh -a [convert||burn||rip||play] -i [wav||mp3] -o [wav||mp3]'
+	echo 'usage: media_functions.sh -a [convert||burn||rip||play] -o [wav||mp3||ogg]'
 	ERROR=1
 }
 
+# function used to check if helper programs are available in path
+is_installed() {
+	PROGRAM=$1
+
+	PATHNAME=`type $PROGRAM 2> /dev/null`
+
+	if [ -z "$PATHNAME" ]; then
+		echo "cannot locate $PROGRAM in path - script will now exit"
+		exit 1;
+	fi
+}
+
+# function used to normalize sound files
 norm() {
-	echo "normalize: set ($*)"
+
+	printf "normalize: set ($*)\n\n"
 	normalize -m $*
-	echo "normalize: done"
-	echo
+	printf "\nnormalize: done\n"
+
 }
 
-convertmp3wav() {
-	
-	for file in $*; do
-		mp3_file=$file
-		wav_file=`echo $mp3_file | sed 's/\.mp3$/\.wav/'`
+# convert file from any format to WAVE audio
+convert_to_wav() {
 
-		file -b $mp3_file | grep MP3
+	# check if file is already in WAVE audio format
+	file -b $file | grep -i "wave audio" &> /dev/null
+	if [ $? -eq 0 ]; then
+		printf "convert_to_wav: %s is already in the correct format\n\n" $file
+		cp $1 $2
+	else
+		printf "convert_to_wav: %s --> %s (using %s)\n\n" $1 $2 $DEC_PROG
+		${DEC_PROG} ${DEC_WAV_OPTS}${2} $1
+	fi
 
-		if [ $? -eq 0 ]; then
-			echo "mp3towav: $mp3_file --> $wav_file (using lame)"
-			lame $LAME_DOPTS $mp3_file $wav_file
+	printf "convert_to_wav: normalizing file\n\n"
+	norm $2
+
+	printf "\nconvert_to_wav: done\n\n"
+
+}
+
+# convert file from WAV format to specified format
+#
+# parameters:
+#	wav_filename: filename of the WAV file to process
+#	output_filename_ext: extension of the output filename
+#	encoding_program: program to use to encode the file
+#	encoding_options: options to pass to encoding program
+convert_from_wav() {
+
+	converted_filename=`basename $1 .wav`.$2
+
+	# check if encoding program is available
+	is_installed $3
+
+	# check that the file is in correct WAVE audio format
+	file -b $1 | grep -i "wave audio" &> /dev/null
+	if [ $? -eq 0 ]; then
+			printf "convert_%s: %s --> %s (using %s)\n\n" $2 $1 $converted_filename $3
+			$3 $4 $1 $converted_filename
 		else
-			echo "mp3towav: $mp3_file not in MP3 format, skipping"
-		fi
-		echo "mp3towav: done"
-		echo
+			printf "convert_%s: %s not in correct WAVE audio format" $2 $1
+	fi
+
+}
+
+convert_mp3() {
+
+	for file in $*; do
+		wav_filename=`echo $file | sed -e 's/\..*$/\.wav/g'`
+		convert_to_wav $file $wav_filename
+		convert_from_wav $wav_filename 'mp3' "$ENC_MP3_PROG" "$ENC_MP3_OPTS"
 	done
 
+	printf "\nconvert_mp3: done\n\n"
+
 }
 
-convertwavmp3() {
+convert_ogg() {
 
 	for file in $*; do
-		wav_file=$file
-		mp3_file=`echo $wav_file | sed 's/\.wav$/\.mp3/'`
-
-		file -b $wav_file | grep WAV
-
-		if [ $? -eq 0 ]; then
-			echo "wavtomp3: $wav_file --> $mp3_file (using lame)"
-			lame $LAME_EOPTS $wav_file $mp3_file
-		else
-			echo "wavtomp3: $wav_file not in WAV format, skippig"
-		fi
-		echo "wavtomp3: done"
-		echo
+		wav_filename=`echo $file | sed -e 's/\..*$/\.wav/g'`
+		convert_to_wav $file $wav_filename
+		convert_from_wav $wav_filename 'ogg' "$ENC_OGG_PROG" "$END_OGG_OPTS"
 	done
+
+	printf "\nconvert_ogg: done\n\n"
 
 }
 
-# burn mp3 files into a audio CD (convert from MP3 to WAV)
 burnmp3wav() {
+
 local wav_files= 
 	# convert files first
 	convertmp3wav $*
@@ -94,7 +148,6 @@ local wav_files=
 
 }
 
-# burn wav files into a MP3 CD (convert from WAV to MP3)
 burnwavmp3() {
 
 	local mp3_files=
@@ -126,7 +179,6 @@ burnwavmp3() {
 
 }
 
-# burn wav files into a audio CD (no conversion necessary)
 burnwavwav() {
 
 	echo "wavburn: Starting burn process"
@@ -136,7 +188,6 @@ burnwavwav() {
 	
 }
 
-# burn mp3 files into a MP3 CD (no conversion necessary)
 burnmp3mp3() {
 
 	echo "mp3burn: creating ISO image ($TMP_DIR/tmp.iso)"
@@ -175,73 +226,45 @@ playmp3 () {
 	mpg123 $*
 }
 
-# sets FILES to playlist order or directory listing
-checkdir () {
-
-	local PLAYLIST=
-	# check for a playlist file (used for file ordering)
-	PLAYLIST=`ls $1/*.pls 2> /dev/null | head -n 1`	# grab only one
-
-	# check to make sure file is not of zero length
-	if [ -z $PLAYLIST ]; then
-		# sort directory listing 
-		FILES=`ls $1/*.$INPUT | sort`
-	else
-		# parse playlist file
-		FILES=`grep 'File' $PLAYLIST | sed -e 's/File[0-9]*=//'`
-	fi
-
-}
-
 # verify that some parameter options were specified
 if [ $# -eq 0 ]; then
 	usage
 fi
 
 # loop through parameters and decide what to do
-while getopts a:i:o:f: option
+while getopts a:o: option
 do
 	case $option in
-		a)
+		a) 
 			[ $OPTARG = "convert" ] || [ $OPTARG = "burn" ] || \
 			[ $OPTARG = "play" ] || [ $OPTARG = "rip" ] && MODE=$OPTARG
 
 			if [ -z $MODE ]; then
-				echo "invalid mode specified (valid: convert, burn, play or rip)"
 				usage
 			fi
 			FUNCTION=$MODE
 			;;
-		i)
-			[ $OPTARG = "wav" ] || [ $OPTARG = "mp3" ] && INPUT=$OPTARG
-
-			if [ -z $INPUT ]; then
-				echo "invalid input mode specified (valid: wav, mp3)"
-				usage
-			fi
-			FUNCTION=${FUNCTION}${INPUT}
-			;;
 		o)
-			[ $OPTARG = "wav" ] || [ $OPTARG = "mp3" ] && OUTPUT=$OPTARG
-
-			if [ -z $OUTPUT ]; then
-				echo "invalid output mode specified (valid: wav, mp3)"
-				usage
-			fi
-			FUNCTION=${FUNCTION}${OUTPUT}
-			;;
-		f)
-			if [ -d $OPTARG ]; then
-				checkdir $OPTARG
-			elif [ -f $OPTARG ]; then
-				FILES=$OPTARG
-			else
-				echo "file option points to none existent file or directory"
-			fi
+			OUTPUT=$OPTARG
+			FUNCTION="${FUNCTION}_${OUTPUT}"
 			;;
 		*)
 			usage
 			;;
 	esac
 done
-$FUNCTION $FILES
+
+# the rest of the command line should be the files to operate on
+shift `expr $OPTIND - 1`
+# loop over all the files and see if any directories were specified
+for file in $*; do
+	if [ -d $file ]; then
+		FILES="$FILES `ls $file/* | sort`"
+	elif [ -f $file ]; then
+		FILES="$FILES $file"
+	else
+		echo "file option points to none existent file or directory"
+	fi
+done
+
+$FUNCTION "$FILES"
