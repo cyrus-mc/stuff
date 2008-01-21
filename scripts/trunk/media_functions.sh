@@ -3,23 +3,20 @@
 # Audio conversion and burning script
 #
 # This file contains functions necessary to convert, modify and burn audio
-# files (wav or mp3)
+# files
+#
+# TODO:
+#	- fix WAV file renaming when there are multiple extensions (file.ext1.ext2)
+#	- oggenc outputs to directory where temporary files are, not working dir
+#	- oggenc outputs error about missing FILENAME.ogg file
+#	- complete burn_mp3 and burn_wav and burn_ogg functions
 #
 # $Author: $
 # $Date: $
 # $Revision: $
 
-# temporary directory to store ISO in
-TMP_DIR=~/.tmp
-LOCAL_TMP_DIR=
-MEDIA_DIR=~/mystuff/media
-
-MODE= 			# variable used to hold action
-OUTPUT=			# variable used to hold output mode
-INPUT=			# variable used to hold input mode
-FILES=			# variable used to hold files to operate on 
-FUNCTION=		# variable used to hold function pointer
-ERROR=0
+# temporary directory to intermediary files
+TMP_DIR=
 
 # parameters for decoding, encoding, ripping and burning
 DEC_PROG="mplayer"
@@ -34,10 +31,24 @@ ENC_OGG_OPTS="-b 192 -q 5"
 PLAY_PROG="mplayer"
 PLAY_PROG_OPTS=""
 
-CDPARANOIA_OPTS="-B"
-CDRECORD_AOPTS="dev=/dev/hdd -eject speed=8 -pad -audio"
-CDRECORD_DOPTS="dev=/dev/hdd -eject speed=8"
-MKISOFS_OPTS="-R"
+ISO_PROG="mkisofs"
+ISO_PROG_OPTS="-r -f -o"
+
+RIP_PROG="cdparanoia"
+RIP_PROG_OPTS="-B 1"
+
+NORM_PROG="normalize"
+NORM_PROG_OPTS="-b"
+
+CDBURN_PROG="cdrecord"
+CDBURN_PROG_DOPTS="dev=/dev/dvd -eject speed=48"
+CDBURN_PROG_AOPTS="dev=/dev/dvd -eject speed=48 -pad -audio"
+
+MODE=          # variable used to hold action
+OUTPUT=        # variable used to hold output mode
+FILES=         # variable used to hold files to operate on 
+FUNCTION=      # variable used to hold function pointer
+ERROR=0
 
 usage() {
 	echo 'usage: media_functions.sh -a [convert||burn||rip||play] -o [wav||mp3||ogg]'
@@ -59,17 +70,27 @@ is_installed() {
 # function used to normalize sound files
 norm() {
 
-	printf "normalize: set ($*)\n\n"
-	normalize -m $*
-	printf "\nnormalize: done\n"
+	# check if normalizing program is available in path
+	is_installed $NORM_PROG
+
+	echo -e "normalize: set ($*)\n"
+	$NORM_PROG $NORM_PROG_OPTS $*
+	echo -e "\nnormalize: done\n"
 
 }
 
 # convert file from any format to WAVE audio
+#
+# parameters:
+#	input_filename: filename of file to convert
+#	output_filename: output filename (most likely .wav extension)
 convert_to_wav() {
 
+	# check if decoding program is available in path
+	is_installed $DEC_PROG
+
 	# check if file is already in WAVE audio format
-	file -b $file | grep -i "wave audio" &> /dev/null
+	file -b $1 | grep -i "wave audio" &> /dev/null
 	if [ $? -eq 0 ]; then
 		printf "convert_to_wav: %s is already in the correct format\n\n" $file
 		cp $1 $2
@@ -78,10 +99,9 @@ convert_to_wav() {
 		${DEC_PROG} ${DEC_WAV_OPTS}${2} $1
 	fi
 
-	printf "convert_to_wav: normalizing file\n\n"
 	norm $2
 
-	printf "\nconvert_to_wav: done\n\n"
+	echo -e "\nconvert_to_wav: done\n"
 
 }
 
@@ -94,10 +114,10 @@ convert_to_wav() {
 #	encoding_options: options to pass to encoding program
 convert_from_wav() {
 
-	converted_filename=`basename $1 .wav`.$2
-
-	# check if encoding program is available
+	# check if encoding program is available in path
 	is_installed $3
+
+	converted_filename=`basename $1 .wav`.$2
 
 	# check that the file is in correct WAVE audio format
 	file -b $1 | grep -i "wave audio" &> /dev/null
@@ -110,6 +130,10 @@ convert_from_wav() {
 
 }
 
+# convert file to MP3 format
+#
+# function first converts file to intermediary WAV format then uses
+# $ENC_MP3_PROG to convert to correct format
 convert_mp3() {
 
 	for file in $*; do
@@ -118,10 +142,14 @@ convert_mp3() {
 		convert_from_wav $wav_filename 'mp3' "$ENC_MP3_PROG" "$ENC_MP3_OPTS"
 	done
 
-	printf "\nconvert_mp3: done\n\n"
+	echo -e "\nconvert_mp3: done\n"
 
 }
 
+# convert file to OGG format
+#
+# function first converts file to intermediary WAV format then uses
+# $ENC_OGG_PROG to convert to correct format
 convert_ogg() {
 
 	for file in $*; do
@@ -130,105 +158,130 @@ convert_ogg() {
 		convert_from_wav $wav_filename 'ogg' "$ENC_OGG_PROG" "$END_OGG_OPTS"
 	done
 
-	printf "\nconvert_ogg: done\n\n"
+	echo -e "\nconvert_to_ogg: done\n"
 
 }
 
-burnmp3wav() {
+# play audio files
+#
+# parameters
+#	input_files: files to play
+play() {
+	$PLAY_PROG $PLAY_PROG_OPTS $*
+}
 
-local wav_files= 
-	# convert files first
-	convertmp3wav $*
+# play MP3 audio files (wrapper function to play function)
+play_mp3() {
+	play $*
+}
 
-	# replace file extensions on filelist with mp3
-	wav_files=`echo $* | sed -e 's/\.mp3$/\.wav/g'`
+# play OGG audiot files (wrapper function to play function)
+play_ogg() {
+	play $*
+}
 
-	# now burn (must modify file extensions first)
-	cdrecord $CDRECORD_AOPTS $wav_files 
+# generate ISO image
+#
+# parameters
+#	input_files: file set to include in ISO image
+generate_iso() {
+
+	# check if ISO program is available in path
+	is_installed $ISO_PROG
+
+	# generate a random filename for the output file and store in TMP_DIR
+	iso_file=${TMP_DIR}/iso_image.iso
+
+	echo -e "generate_iso: creating ISO file $iso_file from file set\n"
+	$ISO_PROG $ISO_PROG_OPTS $iso_file $*
 
 }
 
-burnwavmp3() {
+# burn ISO image to CD drive
+#
+# parameters
+#	input_files: file set to burn to CD
+burn_data() {
 
-	local mp3_files=
+	# check if burning program is available
+	is_installed $CDBURN_PROG
 
-	# convert files first
-	convertwavmp3 $*
+	generate_iso $*
 
-	# delete old tmp.iso if it exists
-	[ -e $TMP_DIR/tmp.iso ] && rm -rf $TMP_DIR/tmp.iso
-	# clear iso directory
-	rm -rf $TMP_DIR/iso/*
+	# check if ISO image exists
+	if [ -r ${TMP_DIR}/iso_image.iso ]; then
+		echo -e "\nburn_data: burning ISO image to CD\n"
+		#$CDBURN_PROG $CDBURN_PROG_DOPTS ${TMP_DIR}/iso_image.iso
+	else
+		echo -e "burn_data: iso_image.iso not found in ${TMP_DIR} or not readable\n"
+	fi
 
-	# replace file extensions on filelist with wav
-	mp3_files=`echo $* | sed -e 's/\.wav$/\.mp3/g'`
-
-	# copy files to iso directory
-	cp $mp3_files $TMP_DIR/iso
-
-	# create iso file
-	mkisofs $MKISOFS_OPTS -o $TMP_DIR/tmp.iso $TMP_DIR/iso
-	echo "mp3burn: ISO image created"
-
-	echo "mp3burn: Starting burn process"
-	# now burn the iso to the CD
-	cdrecord $CDRECORD_DOPTS $TMP_DIR/tmp.iso
-
-	echo "mp3burn: done"
-	echo
-
+	echo -e "\nburn_data: done\n"
 }
 
-burnwavwav() {
-
-	echo "wavburn: Starting burn process"
-	# burn the files
-	cdrecord $CDRECORD_AOPTS $*
-	echo "wavburn: done"
-	
+burn_cd() {
+	# convert files to WAV if necessary and then burn audio CD
+	echo "here"
 }
 
-burnmp3mp3() {
-
-	echo "mp3burn: creating ISO image ($TMP_DIR/tmp.iso)"
-	# delete old tmp.iso if it exists
-	[ -e $TMP_DIR/tmp.iso ] && rm -rf $TMP_DIR/tmp.iso
-	# clear iso directory
-	rm -rf $TMP_DIR/iso/*
-
-	# copy files to iso directory
-	cp $* $TMP_DIR/iso
-
-	# create iso file
-	mkisofs $MKISOFS_OPTS -o $TMP_DIR/tmp.iso $TMP_DIR/iso 
-	echo "mp3burn: ISO image created"
-	
-	echo "mp3burn: Starting burn process"
-	# now burn the iso to the CD
-	cdrecord $CDRECORD_DOPTS $TMP_DIR/tmp.iso
-
-	echo "mp3burn: done"
-	echo
-
+# burn MP3 files to CD drive
+#
+# parameters
+#	input_files: file set to burn to CD
+burn_mp3() {
+	# generate ISO of selected MP3 files and burn ISO to CD
+	burn_data $*
 }
 
+# rip audio track from CD drive
 rip() {
-	LOCAL_TMP_DIR=`date +%d%H%M`
-	echo "rip: ripping tracks ($TMP_DIR/$LOCAL_TMP_DIR)"
-	mkdir $TMP_DIR/$LOCAL_TMP_DIR
-	pushd $TMP_DIR/$LOCAL_TMP_DIR
-	echo cdparanoia $CDPARANOIA_OPTS
-	cdparanoia $CDPARANOIA_OPTS 
-	popd
+
+	# check if CD ripping program is availble in PATH
+	is_installed $RIP_PROG
+
+	printf "rip: %s copying tracks from CD/DVD drive to $TMP_DIR\n\n" $RIP_PROG
+	pushd $TMP_DIR > /dev/null
+
+	$RIP_PROG $RIP_PROG_OPTS
+
+	popd > /dev/null
 }
 
-playmp3 () {
-	mpg123 $*
+# rip audio tracks from CD and convert to MP3 format
+rip_mp3() {
+
+	rip
+	convert_mp3 ${TMP_DIR}/*
+
+}
+
+# rip audio tracks from CD and convert to OGG format
+rip_ogg() {
+
+	rip
+	convert_ogg ${TMP_DIR}/*
+}
+
+# delete any temporary files created
+cleanup() {
+	# implement function to clean up temporary files
+	echo "cleanup: removing temporary/intermediary files"
 }
 
 # verify that some parameter options were specified
 if [ $# -eq 0 ]; then
 	usage
+fi
+
+# initialize TMP_DIR
+TMP_DIR=/tmp/mf_$$
+if [ -e $TMP_DIR ]; then
+	echo "warning: temporary directory $TMP_DIR exists, this may cause unexpected results"
+else
+	mkdir $TMP_DIR
+	if [ $? -ne 0 ]; then
+		echo "error: creation of temporary directory $TMP_DIR failed"
+	fi
 fi
 
 # loop through parameters and decide what to do
@@ -268,3 +321,4 @@ for file in $*; do
 done
 
 $FUNCTION "$FILES"
+cleanup
