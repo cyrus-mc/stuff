@@ -6,8 +6,6 @@
 # files
 #
 # TODO:
-#	- fix WAV file renaming when there are multiple extensions (file.ext1.ext2)
-#	- oggenc outputs to directory where temporary files are, not working dir
 #	- oggenc outputs error about missing FILENAME.ogg file
 #	- complete burn_mp3 and burn_wav and burn_ogg functions
 #
@@ -35,7 +33,7 @@ ISO_PROG="mkisofs"
 ISO_PROG_OPTS="-r -f -o"
 
 RIP_PROG="cdparanoia"
-RIP_PROG_OPTS="-B 1"
+RIP_PROG_OPTS="-B"
 
 NORM_PROG="normalize"
 NORM_PROG_OPTS="-b"
@@ -73,7 +71,7 @@ norm() {
 	# check if normalizing program is available in path
 	is_installed $NORM_PROG
 
-	echo -e "normalize: set ($*)\n"
+	echo -e "\nnormalize: set ($*)\n"
 	$NORM_PROG $NORM_PROG_OPTS $*
 	echo -e "\nnormalize: done\n"
 
@@ -93,7 +91,7 @@ convert_to_wav() {
 	file -b $1 | grep -i "wave audio" &> /dev/null
 	if [ $? -eq 0 ]; then
 		printf "convert_to_wav: %s is already in the correct format\n\n" $file
-		cp $1 $2
+		cp $1 ${TMP_DIR}/$2
 	else
 		printf "convert_to_wav: %s --> %s (using %s)\n\n" $1 $2 $DEC_PROG
 		${DEC_PROG} ${DEC_WAV_OPTS}${2} $1
@@ -101,7 +99,7 @@ convert_to_wav() {
 
 	norm $2
 
-	echo -e "\nconvert_to_wav: done\n"
+	echo -e "convert_to_wav: done\n"
 
 }
 
@@ -137,9 +135,9 @@ convert_from_wav() {
 convert_mp3() {
 
 	for file in $*; do
-		wav_filename=`echo $file | sed -e 's/\..*$/\.wav/g'`
-		convert_to_wav $file $wav_filename
-		convert_from_wav $wav_filename 'mp3' "$ENC_MP3_PROG" "$ENC_MP3_OPTS"
+		wav_filename=`echo $file | sed -e 's/\.[^\.]*$/\.wav/g'`
+		convert_to_wav $file ${TMP_DIR}/$wav_filename
+		convert_from_wav ${TMP_DIR}/$wav_filename 'mp3' "$ENC_MP3_PROG" "$ENC_MP3_OPTS"
 	done
 
 	echo -e "\nconvert_mp3: done\n"
@@ -153,9 +151,11 @@ convert_mp3() {
 convert_ogg() {
 
 	for file in $*; do
-		wav_filename=`echo $file | sed -e 's/\..*$/\.wav/g'`
-		convert_to_wav $file $wav_filename
-		convert_from_wav $wav_filename 'ogg' "$ENC_OGG_PROG" "$END_OGG_OPTS"
+		wav_filename=`echo $file | sed -e 's/\.[^\.]*$/\.wav/g'`
+		convert_to_wav $file ${TMP_DIR}/$wav_filename
+		convert_from_wav ${TMP_DIR}/$wav_filename 'ogg' "$ENC_OGG_PROG" "$END_OGG_OPTS"
+		# oggenc outputs file to TMP_DIR not working directory, so move file
+		mv ${TMP_DIR}/*.ogg .
 	done
 
 	echo -e "\nconvert_to_ogg: done\n"
@@ -265,7 +265,12 @@ rip_ogg() {
 # delete any temporary files created
 cleanup() {
 	# implement function to clean up temporary files
-	echo "cleanup: removing temporary/intermediary files"
+	echo -e "cleanup: removing temporary/intermediary files\n"
+	rm -rf $TMP_DIR
+
+	if [ $? -ne 0 ]; then
+		echo -e "warning: error occured while trying to remove $TMP_DIR directory\n"
+	fi
 }
 
 # verify that some parameter options were specified
@@ -274,7 +279,7 @@ if [ $# -eq 0 ]; then
 fi
 
 # initialize TMP_DIR
-TMP_DIR=/tmp/mf_$$
+TMP_DIR=/tmp/${USER}_$$
 if [ -e $TMP_DIR ]; then
 	echo "warning: temporary directory $TMP_DIR exists, this may cause unexpected results"
 else
@@ -309,16 +314,26 @@ done
 
 # the rest of the command line should be the files to operate on
 shift `expr $OPTIND - 1`
-# loop over all the files and see if any directories were specified
-for file in $*; do
-	if [ -d $file ]; then
-		FILES="$FILES `ls $file/* | sort`"
-	elif [ -f $file ]; then
-		FILES="$FILES $file"
-	else
-		echo "file option points to none existent file or directory"
+
+# only check for specified files if mode is not rip
+if [ $MODE != "rip" ]; then
+	# check if at least one file was specified
+	if [ -z $* ]; then
+		echo -e "error: no files specified, exiting\n"
+		exit 1
 	fi
-done
+
+	# loop over all the files and see if any directories were specified
+	for file in $*; do
+		if [ -d $file ]; then
+			FILES="$FILES `ls $file/* | sort`"
+		elif [ -f $file ]; then
+			FILES="$FILES $file"
+		else
+			echo -e "warning: specified file or directory - $file - does not exist\n"
+		fi
+	done
+fi
 
 $FUNCTION "$FILES"
 cleanup
