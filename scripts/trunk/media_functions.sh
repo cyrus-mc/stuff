@@ -6,7 +6,7 @@
 # files
 #
 # TODO:
-#	- oggenc outputs error about missing FILENAME.ogg file
+#	- fix error message from oggenc complaining .ogg file in incorrect format
 #	- complete burn_mp3 and burn_wav and burn_ogg functions
 #
 # $Author: $
@@ -71,7 +71,7 @@ norm() {
 	# check if normalizing program is available in path
 	is_installed $NORM_PROG
 
-	echo -e "\nnormalize: set ($*)\n"
+	echo -e "normalize: set ($*)\n"
 	$NORM_PROG $NORM_PROG_OPTS $*
 	echo -e "\nnormalize: done\n"
 
@@ -91,7 +91,6 @@ convert_to_wav() {
 	file -b $1 | grep -i "wave audio" &> /dev/null
 	if [ $? -eq 0 ]; then
 		printf "convert_to_wav: %s is already in the correct format\n\n" $file
-		cp $1 ${TMP_DIR}/$2
 	else
 		printf "convert_to_wav: %s --> %s (using %s)\n\n" $1 $2 $DEC_PROG
 		${DEC_PROG} ${DEC_WAV_OPTS}${2} $1
@@ -155,7 +154,7 @@ convert_ogg() {
 		convert_to_wav $file ${TMP_DIR}/$wav_filename
 		convert_from_wav ${TMP_DIR}/$wav_filename 'ogg' "$ENC_OGG_PROG" "$END_OGG_OPTS"
 		# oggenc outputs file to TMP_DIR not working directory, so move file
-		mv ${TMP_DIR}/*.ogg .
+		mv ${TMP_DIR}/*.ogg . 2> /dev/null
 	done
 
 	echo -e "\nconvert_to_ogg: done\n"
@@ -239,7 +238,7 @@ rip() {
 	# check if CD ripping program is availble in PATH
 	is_installed $RIP_PROG
 
-	printf "rip: %s copying tracks from CD/DVD drive to $TMP_DIR\n\n" $RIP_PROG
+	printf "rip: %s copying tracks from CD/DVD drive\n\n" $RIP_PROG
 	pushd $TMP_DIR > /dev/null
 
 	$RIP_PROG $RIP_PROG_OPTS
@@ -247,11 +246,26 @@ rip() {
 	popd > /dev/null
 }
 
+# rop audio tracks from CD and convert to WAV format
+rip_wav() {
+
+	rip
+	# move files to current directory
+	# move command
+}
+
 # rip audio tracks from CD and convert to MP3 format
 rip_mp3() {
 
 	rip
-	convert_mp3 ${TMP_DIR}/*
+
+	# change to temporary directory
+	pushd $TMP_DIR > /dev/null
+	convert_mp3 *
+	popd > /dev/null
+
+	# move created MP3 files to current working directory
+	mv ${TMP_DIR}/*.mp3 .
 
 }
 
@@ -259,7 +273,15 @@ rip_mp3() {
 rip_ogg() {
 
 	rip
-	convert_ogg ${TMP_DIR}/*
+
+	# change to temporary directory
+	pushd $TMP_DIR > /dev/null
+	convert_ogg *
+	popd > /dev/null
+
+	# move created OGG files to current working directory
+	mv ${TMP_DIR}/*.ogg .
+
 }
 
 # delete any temporary files created
