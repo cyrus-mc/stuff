@@ -1,0 +1,289 @@
+<?php
+
+function __autoload($class_name) {
+	require_once 'iphoto2/plugins/' . $class_name . '.php';
+}
+
+/* debug */
+//$fh = fopen("output.txt", "r+");
+
+/* known types */
+$file_types = array('jpg' => 'image', 'jpeg' => 'image',
+		'png' => 'image', 'gif' => 'image',
+		'mp3' => 'mp3');
+
+/* print out error message in HTML format */
+function errorMsg($error_text){
+
+	echo '<b><font color="red">ERROR :</font> '.$error_text.'</b>';
+	exit();
+
+}
+
+/* 
+   check that the data directory is write-able (relative to current directory) 
+   check that GD2 support is built into PHP
+*/
+function requirement_checker(){
+
+	if(!is_writable('data/')){ errorMsg('Oh no! You have make a boo boo...! Please make sure the "data" directory is writable. Click <a href="http://ifoto.ireans.com/faq" target="_blank">here</a> for more info.'); }
+
+	if(function_exists("gd_info")){ $info=gd_info();
+		if(!strstr($info['GD Version'],"2.")){errorMsg('Please make sure you PHP compiled with GD2. Click <a href="http://ifoto.ireans.com/faq" target="_blank">here</a> for more information.');}
+ 	}else{
+ 		errorMsg('Please make sure you PHP compiled with GD2. Click <a href="http://ifoto.ireans.com/faq" target="_blank">here</a> for more information.');
+ 	}
+
+}
+
+/* return _GET parameters, stripping out <, >, ", ', ; and : */
+function get_param($get_param){
+
+	if(@$return_filtered = $_GET[$get_param]){
+
+		$return_filtered = str_replace('<','',$return_filtered);
+		$return_filtered = str_replace('>','',$return_filtered);
+		$return_filtered = str_replace('"','',$return_filtered);
+		$return_filtered = str_replace("'",'',$return_filtered);
+		$return_filtered = str_replace(";",' ',$return_filtered);
+		$return_filtered = str_replace(":",' ',$return_filtered);
+		$return_filtered = stripslashes($return_filtered);
+
+		return $return_filtered;
+
+	}else{
+		return false;
+	}
+}
+
+/* return _POST parameters, stripping out <, >, ", ', ; and : */
+function post_param($get_param){
+
+	if(@$return_filtered = $_POST[$get_param]){
+
+		$return_filtered = str_replace('<','',$return_filtered);
+		$return_filtered = str_replace('>','',$return_filtered);
+		$return_filtered = str_replace('"','',$return_filtered);
+		$return_filtered = str_replace("'",'',$return_filtered);
+		$return_filtered = str_replace(";",' ',$return_filtered);
+		$return_filtered = str_replace(":",' ',$return_filtered);
+		$return_filtered = stripslashes($return_filtered);
+
+		return $return_filtered;
+
+	}else{
+		return false;
+	}
+}
+
+/* delete files from directory */
+function ClearDirectory($path){
+   if($dir_handle = opendir($path)){
+       while($file = readdir($dir_handle)){
+           if($file == "." || $file == ".."){
+               if(!@unlink($path."/".$file)){
+                   continue;
+               }
+           }else{
+               @unlink($path."/".$file);
+           }
+       }
+       closedir($dir_handle);
+       return true;
+// all files deleted
+   }else{
+       return false;
+// directory doesn?t exist
+   }
+}
+
+/* remove directory, after clearing all files */
+function RemoveDirectory($path){
+   if(ClearDirectory($path)){
+       if(rmdir($path)){
+           return true;
+// directory removed
+       }else{
+           return false;
+// directory couldn?t removed
+       }
+   }else{
+       return false;
+// no empty directory
+   }
+}
+
+/*
+   Read contents of a directory and add to an array (recursive if parameter supplied) 
+*/
+function directoryToArray($directory, $recursive) {
+	$array_items = array();
+	if ($handle = opendir($directory)) {
+		while (false !== ($file = readdir($handle))) {
+			if ($file != "." && $file != "..") {
+				if (is_dir($directory. "/" . $file)) {
+					if($recursive) {
+						$array_items = array_merge($array_items, directoryToArray($directory. "/" . $file, $recursive));
+					}
+					$file = $directory . "/" . $file;
+					$array_items[] = preg_replace("/\/\//si", "/", $file);
+				} else {
+					$file = $directory . "/" . $file;
+					$array_items[] = preg_replace("/\/\//si", "/", $file);
+				}
+			}
+		}
+		closedir($handle);
+	}
+	return $array_items;
+}
+
+function readDirectory($current_dir = '', $exclude_dir = false){
+	global $file_types;
+
+	$object_list = array();
+
+	$opendir = 'gallery/' . $current_dir;
+	if ($handle = opendir($opendir)) {
+		while (false !== ($file = readdir($handle))) {	
+			$extension = strtolower(substr($file, strrpos($file, ".") + 1, strlen($file)));
+			if ($file != '.' AND $file != '..') {
+				if (is_dir($opendir . '/' . $file) AND !$exclude_dir) {
+					$class1 = new directory_temp($current_dir, $file, $extension);
+					$object_list[] = $class1;
+				} elseif (isset($file_types[$extension])) {
+					$class1 = new $file_types[$extension]($current_dir, $file, $extension);
+					//$image_list_arr[] = $class1->return_as_array();
+					$object_list[] = $class1;
+				}
+			}
+		}
+        	closedir($handle);
+		return $object_list;
+	} else {
+    		return false;
+	}
+}
+
+/* 
+	Function to handle images
+*/
+function plugin_image($gallery_dir, $image_filename, $type) {
+	$image_details = array();
+	
+	$file_location = 'gallery/' . $gallery_dir . '/' . $image_filename;
+	$thumbnail_location = 'data/thumbdata_' . base64_encode($gallery_dir . ']|[' . $image_filename . ']|[' . filectime($file_location)) . '.jpg';
+	$file_title = basename($image_filename, '.' . $type);
+
+	list($image_details['width'], $image_details['height'], $image_details['type']) = getimagesize($file_location); 
+
+	if (is_file($file_location)) {
+		$image_details['thumb'] = $thumbnail_location;
+	} else {
+		$image_details['thumb'] = 'img_holder.jpg';
+	}
+
+	if (STRIP_SORT_NUMBER AND (is_numeric(substr($file_title, 0, 1))) AND (substr($file_title, 1, 1) == '_')) {
+		$file_title = substr($file_title, 2);
+	}
+
+	$image_details['item_type'] = 'image';
+	$image_details['filesize'] = filesize($file_location);
+	$image_details['modified'] = filectime($file_location);
+	$image_details['id'] = md5($gallery . $image_filename.time());
+	$image_details['dir'] = $gallery_dir;
+	$image_details['filename'] = $image_filename;
+	$image_details['title'] = str_replace('_', ' ', $file_title);
+
+	return $image_details;
+}
+
+/*
+	Function to handle mp3s
+*/
+function plugin_mp3($directory, $mp3_filename) {
+	$mp3_details = array();
+
+	$file_location = 'gallery/' . $directory . '/' . $mp3_filename;
+	$file_title = basename($mp3_filename, '.mp3');
+
+	$tag = id3_get_tag('gallery/' . $directory . '/' . $mp3_filename);
+
+	$mp3_details['item_type'] = 'mp3';
+	$mp3_details['thumb'] = 'img_holder.jpg';
+	$mp3_details['filesize'] = filesize($file_location);
+	$mp3_details['modified'] = filectime($file_location);
+	$mp3_details['id'] = md5($directory . $mp3_filename.time());
+	$mp3_details['dir'] = $directory;
+	$mp3_details['filename'] = $mp3_filename;
+	$mp3_details['title'] = str_replace('_', ' ', $file_title);
+
+	return $mp3_details;
+}
+
+function multi_array_sort($array='', $key='', $order='asc')
+{
+	if($array AND $key){
+
+		foreach ($array as $i => $k) {
+			$sort_values[$i] = $array[$i][$key];
+		}
+		if($order == 'desc'){
+			rsort ($sort_values);
+		}else{
+			asort ($sort_values);
+		}
+		reset ($sort_values);
+		while (list ($arr_key, $arr_val) = each ($sort_values)) {
+			$sorted_arr[] = $array[$arr_key];
+		}
+		return $sorted_arr;
+
+	}else{
+		return false;
+	}
+
+}
+
+function multi_array_search($search_value, $the_array)
+{
+   if (is_array($the_array))
+   {
+       foreach ($the_array as $key => $value)
+       {
+           $result = multi_array_search($search_value, $value);
+           if (is_array($result))
+           {
+               $return = $result;
+               array_unshift($return, $key);
+               return $return;
+           }
+           elseif ($result == true)
+           {
+               $return[] = $key;
+               return $return;
+           }
+       }
+       return false;
+   }
+   else
+   {
+       if ($search_value == $the_array)
+       {
+           return true;
+       }
+       else return false;
+   }
+}
+
+/* for debug purpose */
+function pre($sting_to_pre = ''){
+
+    if($sting_to_pre){
+        echo '<pre>';
+        print_r($sting_to_pre);
+        echo '</pre>';
+    }
+}
+
+?>
