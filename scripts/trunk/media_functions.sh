@@ -210,7 +210,7 @@ burn_data() {
 	# check if ISO image exists
 	if [ -r ${TMP_DIR}/iso_image.iso ]; then
 		echo -e "\nburn_data: burning ISO image to CD\n"
-		#$CDBURN_PROG $CDBURN_PROG_DOPTS ${TMP_DIR}/iso_image.iso
+		$CDBURN_PROG $CDBURN_PROG_DOPTS ${TMP_DIR}/iso_image.iso
 	else
 		echo -e "burn_data: iso_image.iso not found in ${TMP_DIR} or not readable\n"
 	fi
