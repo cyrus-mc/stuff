@@ -101,8 +101,8 @@ class Authentication {
 	/* 
 		Check access
 	*/
-	public check($application, $content, $user_id, $group_id) {
-	}
+	//public check($application, $content, $user_id, $group_id) {
+	//}
 
 	public function get() {
 		return $this->ref_count;
