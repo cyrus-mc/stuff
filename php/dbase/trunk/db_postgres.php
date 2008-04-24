@@ -74,22 +74,17 @@ class db_postgres extends db_common_cache {
 		/* check if result is cached */
 		$cache = $this->get($sql_hash);
 				
-		if ($cache && ! $cache['dirty']) {
-			print "in cache\n";			
-			return $cache['contents'];
-		}
+		if ($cache)					
+			return $cache['contents'];		
 
 		/* execute the query since it was either not in the cache or dirty */
 		$result = pg_query($this->link, $sql);				
-		if (result) {
+		if ($result) {
 			/* if it was in cache but dirty bit was set, restore */
-			if ($cache) {
-				print "in cache but dirty\n";					
+			if ($cache)								
 				$this->set($sql_hash, $result);	
-			} else {
-				print "not in cache\n";
-				$this->add($sql_hash, $result, $this->parse_select($sql), false);
-			}			
+			else
+				$this->add($sql_hash, $result, $this->parse_select($sql), false);			
 							
 			return $result;
 		}		

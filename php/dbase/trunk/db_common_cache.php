@@ -2,7 +2,7 @@
 /*
    vim:ts=3:sw=3:
 
-   Implementation of base level class for database access
+   Implementation of base level class for database access with caching
 
    $Author: $
    $Date: $
@@ -18,6 +18,9 @@ require_once '../../memory/trunk/s_cache.php';
  */
 
 abstract class db_common_cache extends s_cache {	
+	
+	const GLOBAL_CACHE_LINE = 1;
+	const USER_CACHE_LINE = 2;
 	
 	/**
 	 * @access private
@@ -48,8 +51,8 @@ abstract class db_common_cache extends s_cache {
 	 * 	  
 	 * @param $connection_string (username:password@dbname.host:port)
 	 */   	
-	function __construct($connection_string) {		
-		parent::__construct(2);
+	function __construct($connection_string, $cache_size = 0) {		
+		parent::__construct($cache_size);
 
 		$this->connection_string = $connection_string;
 
@@ -178,56 +181,65 @@ abstract class db_common_cache extends s_cache {
 	 */
 	 public function add($sql_hash, $data, array $table_names, $overwrite = false) {
 	 	/* incase the add of parent function removes an element */
-	 	$key_to_remove = $this->get_oldest_element();
+	 	$key_to_remove = $this->get_oldest_cache();
 	 	
-		if (parent::add($sql_hash, $data, $overwrite)) {
-			/* if size is maxed out, then the oldest element will be removed */
-			if ($this->max_cache_lines != 0 && $this->cur_cache_lines == $this->max_cache_lines)
-				$this->remove($key_to_remove);
-				
-			/* parse the statement and update the two maintained hash tables */
-			foreach ($table_names as $table) {
-				if (!array_key_exists($table, $this->table_to_key_mappings))
-					$this->table_to_key_mappings[$table] = array();	
-				
-					array_push($this->table_to_key_mappings[$table], $sql_hash);
-			}
-			$this->key_to_table_mappings[$sql_hash] = $table_names;
-
-			return true;
-		}
-		return false;
+	 	if (parent::add($sql_hash, $data, $overwrite)) {	 			 			 		
+	 		/* parse the statement and update the two maintained hash tables */
+	 		foreach ($table_names as $table) {
+	 			$this->table_to_key_mappings[$table][$sql_hash] = self::GLOBAL_CACHE_LINE;
+	 			$this->key_to_table_mappings[$sql_hash][$table] = self::GLOBAL_CACHE_LINE;
+	 		}	 			 	
+	 		return true;
+	 	}
+	 	return false;	 	
 	 }
 	
 	/**
-	 * Remove mapping between key and table
+	 * Remove mapping between key and table and vice versa
 	 * 
 	 * @param string $key
 	 * @return void
 	 */
-	public function remove($key) {	
-		if (parent::remove($key)) {			
-			foreach ($this->key_to_table_mappings[$key] as $table)			
-				unset($this->table_to_key_mappings[$table][$key]);
-				
+	 public function remove($key) {	 	
+	 	if (parent::remove($key)) {
+	 		foreach ($this->key_to_table_mappings[$key] as $table => $data)
+	 			unset($this->table_to_key_mappings[$table][$key]);
+	 				
 			unset($this->key_to_table_mappings[$key]);
-		}
-	}
-	
-	public function set_m_dirty(array $table_names) {
-		foreach ($table_names as $table) {			
-			parent::set_m_dirty($this->table_to_key_mappings[$table]);
-		}
-	}
-	
-	public function print_table_to_key_cache() { print_r($this->table_to_key_mappings); }
-	public function print_key_to_table_cache() { print_r($this->key_to_table_mappings); }
-	
-	/* abstract functions to be defined by */ 
-	abstract public function connect();
-	abstract public function disconnect();	
-	abstract public function execute($sql, $reconnect = FALSE);
+			return true;	
+	 	}
+	 	return false;	 	
+	 }
 
+	 /**
+	  * Mark multiple cache lines dirty
+	  * @param array keys
+	  * @return void
+	  */	  	
+	 public function set_m_dirty(array $table_names) {		
+		foreach ($table_names as $table) {							
+			parent::set_m_dirty(array_keys($this->table_to_key_mappings[$table]));
+		}
+	 }	
+	 
+	 /**
+	  * Print contents of the table to key map
+	  * 
+	  * @return void
+	  */
+	 public function print_table_to_key_cache() { print_r($this->table_to_key_mappings); }
+	 
+	 /**
+	  * Print the contents of the key to table map
+	  * 
+	  * @return void
+	  */
+	 public function print_key_to_table_cache() { print_r($this->key_to_table_mappings); }
+	
+	 /* abstract functions to be defined by inheritting class */
+	 abstract public function connect();
+	 abstract public function disconnect();
+	 abstract public function execute($sql, $reconnect = false);	
 }
 
 ?>
