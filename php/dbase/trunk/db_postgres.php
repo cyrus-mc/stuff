@@ -10,10 +10,10 @@
    $Revision: $
 */
 
-// include base class
-require_once 'db_common_cache.php';
+/* include base class */
+require_once 'db_base.php';
 
-class db_postgres extends db_common_cache {
+class db_postgres extends db_base {
 	
 	/* define the parent class abstract functions */
 	
