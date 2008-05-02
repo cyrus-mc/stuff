@@ -1,18 +1,19 @@
 <?php
 /**
- *  Implemention of memory cache
+ * Implemention of memory cache
  * 
- * 	Note: utilizes if (array[key]) to test for existence instead of
- * 	      array_key_exists since the class gaurantees value of array key
- * 		  will never be false or null
- *  
- *  vim:ts=3:sw=3:
+ * Note: utilizes if (array[key]) to test for existence instead of
+ * 	     array_key_exists since the class gaurantees value of array key
+ * 		 will never be false or null   
+ * 
+ * vim:ts=3:sw=3:
  *
- *	@author: Matthew Ceroni
- *	@version: 1.0	
+ * @author: Matthew Ceroni
+ * @version: 1.0	
  *	
- *	@package memory
+ * @package memory
  */
+
 
 class cache {
 	
@@ -34,7 +35,7 @@ class cache {
 	 * Initialize the size of the cache and zero out all cache lines
 	 */
 	public function __construct() {			
-		$this->clear_cache();
+		$this->clear_cache();			
 	}	
 	
 	/**
@@ -49,6 +50,12 @@ class cache {
 	 */
 	private $dirty_cache_hits = 0;
 	
+	/**
+	 * @access private
+	 * @var int - holds the number of cache misses
+	 */
+	private $cache_misses = 0;
+	
 	/* begin definition of abstract members */
 	
 	/**
@@ -59,11 +66,11 @@ class cache {
 	 * @param boolean $overwrite
 	 * @return boolean
 	 */
-	public function add($key, $data, $overwrite = false) {
+	public function add($key, $data, $overwrite = false) {			
 		if ($overwrite || ! $this->cache_lines[$key]) {
-			$this->cache_lines[$key] = array('contents' => $data, 'dirty' => false);
+			$this->cache_lines[$key] = array('contents' => $data, 'dirty' => false);			
 			return true;
-		}
+		}		
 		self::$errstr = "cache::add($key, ...) - overwrite = $overwrite - key already exists in cache.";
 		return false;
 	}
@@ -76,8 +83,8 @@ class cache {
 	 * @param string $key
 	 * @return mixed
 	 */
-	public function get($key, $return_dirty = false) {
-		if (($element = $this->cache_lines[$key])) {
+	public function get($key, $return_dirty = false) {		
+		if (($element = $this->cache_lines[$key])) {			
 			/* update cache counters */
 			$this->dirty_cache_hits += (int)$element['dirty'];
 			$this->clean_cache_hits += (int) !$element['dirty'];
@@ -86,7 +93,8 @@ class cache {
 
 			self::$errstr = "cache::get($key, $return_dirty) - specified key found but cache dirty.";
 			return false;
-		}
+		}		
+		$this->cache_misses++;
 		self::$errstr = "cache::get($key) - specified key not in cache.";
 		return false;
 	}		
@@ -98,12 +106,12 @@ class cache {
 	 * @param mixed $data	 
 	 * @return boolean
 	 */	
-	public function set($key, $data) {
+	public function set($key, $data) {		
 		if ($this->cache_lines[$key]) {			
 			$this->cache_lines[$key]['contents'] = $data;
-			$this->cache_lines[$key]['dirty'] = false;
+			$this->cache_lines[$key]['dirty'] = false;			
 			return true;
-		}
+		}		
 		self::$errstr = "cache::set($key, ...) - key does not exist.";
 		return false;
 	}					
@@ -113,9 +121,9 @@ class cache {
 	 * 
 	 * @return void
 	 */
-	public function clear_cache() {
+	public function clear_cache() {		
 		unset($this->cache_lines);
-		$this->cache_lines = array();
+		$this->cache_lines = array();		
 	}
 	
 	/**
@@ -178,13 +186,21 @@ class cache {
 	public function get_dirty_cache_hits() { return $this->dirty_cache_hits; }
 	
 	/**
+	 * Return the number of cache misses
+	 * 
+	 * @return int
+	 */
+	public function get_cache_misses() { return $this->cache_misses; }
+	
+	/**
 	 * Reset the internal counts for clean and dirty cache hits to zero
 	 * 
 	 * @return void
 	 */
 	public function reset_counters() {
 		$this->clean_cache_hits = 0;
-		$this->dirty_cache_hits = 0;		
+		$this->dirty_cache_hits = 0;
+		$this->cache_misses = 0;		
 	}
 	
 	/**

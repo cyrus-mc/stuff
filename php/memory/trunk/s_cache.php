@@ -13,9 +13,6 @@
 require_once 'cache.php';
 
 class s_cache extends cache {	
-		
-	const CACHE_ADD_ONLY = 1;
-	const CACHE_ADD_AND_REMOVE = 2;	
 	
 	/**
 	 * @access private
