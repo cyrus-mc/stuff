@@ -45,7 +45,7 @@ class db_postgres extends db_base {
 	 * @param boolean $reconnect
 	 * @return mixed
 	 */
-	public function execute($sql, $reconnect = FALSE) {
+	public function execute($sql, $namespace = self::GLOBAL_CACHE_LINE, $reconnect = FALSE) {
 		/* make sure we are connected and the connection status is good */
 		if ($this->get_status() == PGSQL_CONNECTION_BAD) {
 			if ($reconnect && ! $this->connect())
@@ -60,7 +60,7 @@ class db_postgres extends db_base {
 		/* determine type of SQL statement (select, update, insert or other) */
 		$type_of_stmt = "execute_" . substr($sql, 0, strpos($sql, ' '));		
 		
-		return $this->$type_of_stmt($sql, $sql_hash);					
+		return $this->$type_of_stmt($sql, $sql_hash, $namespace);					
 	}
 	
 	/**
@@ -70,7 +70,7 @@ class db_postgres extends db_base {
 	 * @param string $sql_hash
 	 * @return boolean 
 	 */
-	public function execute_select($sql, $sql_hash) {
+	public function execute_select($sql, $sql_hash, $namespace) {
 		/* check if result is cached */
 		$cache = $this->get($sql_hash);
 				
@@ -84,7 +84,7 @@ class db_postgres extends db_base {
 			if ($cache)								
 				$this->set($sql_hash, $result);	
 			else
-				$this->add($sql_hash, $result, $this->parse_select($sql), false);			
+				$this->add($sql_hash, $result, $this->parse_select($sql), $namespace, false);			
 							
 			return $result;
 		}		
@@ -99,13 +99,13 @@ class db_postgres extends db_base {
 	 * @param string $sql_hash
 	 * @return boolean
 	 */
-	public function execute_insert($sql, $sql_hash) {
+	public function execute_insert($sql, $sql_hash, $namespace) {
 		$result = pg_query($this->link, $sql);
 		
 		/* check if insert was successfull, if so, mark affected cache lines dirty */		
 		if (result)
 			if (pg_affected_rows($result) != 0)				
-				$this->set_m_dirty($this->parse_insert($sql));			
+				$this->set_m_dirty($this->parse_insert($sql), $namespace);			
 			return $result;
 		
 		self::$errstr = "db_postgres::execute_insert($sql, ...) - failed to execute :: " . pg_last_error($this->link);
@@ -119,13 +119,13 @@ class db_postgres extends db_base {
 	 * @param string $sql_hash
 	 * @return boolean
 	 */
-	public function execute_update($sql, $sql_hash) {
+	public function execute_update($sql, $sql_hash, $namespace) {
 		$result = pg_query($this->link, $sql);
 		
 		/* check if update was successfull, if so, mark affected cache lines dirty */
 		if (result)
 			if (pg_affected_rows($result) != 0)
-				$this->set_m_dirty($this->parse_update($sql));			
+				$this->set_m_dirty($this->parse_update($sql), $namespace);			
 			return $result;
 		
 		self::$errstr = "db_postgres::execute_update($sql, ...) - failed to execute :: " . pg_last_error($this->link);
@@ -139,13 +139,13 @@ class db_postgres extends db_base {
 	 * @param $sql_hash
 	 * @return boolean
 	 */
-	public function execute_delete($sql, $sql_hash) {
+	public function execute_delete($sql, $sql_hash, $namespace) {
 		$result = pg_query($this->link, $sql);
 		
 		/* check if drop was successfull, if so, mark affected cache lines dirty */
 		if (result)
 			if (pg_affected_rows($result) != 0)
-				$this->set_m_dirty($this->parse_delete($sql));
+				$this->set_m_dirty($this->parse_delete($sql), $namespace);
 			return $result;
 			
 		self::$errstr = "db_postgres::execute_delete($sql, ...) - failed to execute :: " . pg_last_error($this->link);

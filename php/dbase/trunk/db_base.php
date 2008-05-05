@@ -99,7 +99,7 @@ abstract class db_base extends db_cache {
 	 /* abstract functions to be defined by inheritting class */
 	 abstract public function connect();
 	 abstract public function disconnect();
-	 abstract public function execute($sql, $reconnect = false);	
+	 abstract public function execute($sql, $namespace = self::GLOBAL_CACHE_LINE, $reconnect = false);	
 }
 
 ?>

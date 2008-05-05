@@ -106,19 +106,19 @@ abstract class db_cache extends s_cache {
 	 * @param boolean $overwrite
 	 * @return boolean 
 	 */
-	 public function add($sql_hash, $data, array $table_names, $overwrite = false) {	 		 	
+	 public function add($sql_hash, $data, array $table_names, $namespace, $overwrite = false) {	 		 	
 	 	if (parent::add($sql_hash, $data, $overwrite)) {	 			 			 		
 	 		/* parse the statement and update the two maintained hash tables */
 	 		foreach ($table_names as $table) {
 	 			if (! $this->table_to_key_mappings[$table])
 	 				$this->table_to_key_mappings[$table] = array();
 	 				
-	 			$this->table_to_key_mappings[$table][$sql_hash] = self::GLOBAL_CACHE_LINE;
+	 			$this->table_to_key_mappings[$table][$sql_hash] = $namespace;
 	 			
 	 			if (! $this->key_to_table_mappings[$sql_hash])
 	 				$this->key_to_table_mappings[$sql_hash] = array();
 	 				
-	 			$this->key_to_table_mappings[$sql_hash][$table] = self::GLOBAL_CACHE_LINE;
+	 			$this->key_to_table_mappings[$sql_hash][$table] = $namespace;
 	 		}	 			 	
 	 		return true;
 	 	}
@@ -141,15 +141,21 @@ abstract class db_cache extends s_cache {
 	 	}
 	 	return false;	 	
 	 }
-
+	 	 
 	 /**
 	  * Mark multiple cache lines dirty
 	  * @param array keys
 	  * @return void
 	  */	  	
-	 public function set_m_dirty(array $table_names) {		
-		foreach ($table_names as $table) {							
-			parent::set_m_dirty(array_keys($this->table_to_key_mappings[$table]));
+	 public function set_m_dirty(array $table_names, $namespace) {		
+		foreach ($table_names as $table) {
+			foreach (array_keys($this->table_to_key_mappings[$table]) as $key) {
+				if ($this->table_to_key_mappings[$table][$key] == $namespace) {
+					print "$key\n";
+					$this->set_dirty($key);
+				}
+			}
+			//parent::set_m_dirty(array_keys($this->table_to_key_mappings[$table]));
 		}
 	 }	
 	 
