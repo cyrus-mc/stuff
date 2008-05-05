@@ -150,12 +150,9 @@ abstract class db_cache extends s_cache {
 	 public function set_m_dirty(array $table_names, $namespace) {		
 		foreach ($table_names as $table) {
 			foreach (array_keys($this->table_to_key_mappings[$table]) as $key) {
-				if ($this->table_to_key_mappings[$table][$key] == $namespace) {
-					print "$key\n";
+				if ($this->table_to_key_mappings[$table][$key] == $namespace)					
 					$this->set_dirty($key);
-				}
 			}
-			//parent::set_m_dirty(array_keys($this->table_to_key_mappings[$table]));
 		}
 	 }	
 	 
