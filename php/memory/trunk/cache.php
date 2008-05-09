@@ -2,10 +2,6 @@
 /**
  * Implemention of memory cache
  * 
- * Note: utilizes if (array[key]) to test for existence instead of
- * 	     array_key_exists since the class gaurantees value of array key
- * 		 will never be false or null   
- * 
  * vim:ts=3:sw=3:
  *
  * @author: Matthew Ceroni
@@ -67,7 +63,7 @@ class cache {
 	 * @return boolean
 	 */
 	public function add($key, $data, $overwrite = false) {			
-		if ($overwrite || ! $this->cache_lines[$key]) {
+		if ($overwrite || ! isset($this->cache_lines[$key])) {
 			$this->cache_lines[$key] = array('contents' => $data, 'dirty' => false);			
 			return true;
 		}		
@@ -84,7 +80,8 @@ class cache {
 	 * @return mixed
 	 */
 	public function get($key, $return_dirty = false) {		
-		if (($element = $this->cache_lines[$key])) {			
+		if (isset($this->cache_lines[$key])) {
+			$element = $this->cache_lines[$key];
 			/* update cache counters */
 			$this->dirty_cache_hits += (int)$element['dirty'];
 			$this->clean_cache_hits += (int) !$element['dirty'];
@@ -107,7 +104,7 @@ class cache {
 	 * @return boolean
 	 */	
 	public function set($key, $data) {		
-		if ($this->cache_lines[$key]) {			
+		if (isset($this->cache_lines[$key])) {			
 			$this->cache_lines[$key]['contents'] = $data;
 			$this->cache_lines[$key]['dirty'] = false;			
 			return true;
@@ -133,7 +130,7 @@ class cache {
 	 * @return boolean
 	 */
 	public function remove($key) {		
-		if ($this->cache_lines[$key]) {	
+		if (isset($this->cache_lines[$key])) {	
 			unset($this->cache_lines[$key]);
 			return true;
 		}
@@ -148,7 +145,7 @@ class cache {
 	 * @return void
 	 */
 	public function set_dirty($key) {		
-		if ($this->cache_lines[$key]) {			
+		if (isset($this->cache_lines[$key])) {			
 			$this->cache_lines[$key]['dirty'] = true;
 			return true;
 		}

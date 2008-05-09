@@ -110,12 +110,12 @@ abstract class db_cache extends s_cache {
 	 	if (parent::add($sql_hash, $data, $overwrite)) {	 			 			 		
 	 		/* parse the statement and update the two maintained hash tables */
 	 		foreach ($table_names as $table) {
-	 			if (! $this->table_to_key_mappings[$table])
+	 			if (! isset($this->table_to_key_mappings[$table]))
 	 				$this->table_to_key_mappings[$table] = array();
 	 				
 	 			$this->table_to_key_mappings[$table][$sql_hash] = $namespace;
 	 			
-	 			if (! $this->key_to_table_mappings[$sql_hash])
+	 			if (! isset($this->key_to_table_mappings[$sql_hash]))
 	 				$this->key_to_table_mappings[$sql_hash] = array();
 	 				
 	 			$this->key_to_table_mappings[$sql_hash][$table] = $namespace;

@@ -72,9 +72,9 @@ class db_postgres extends db_base {
 	 */
 	public function execute_select($sql, $sql_hash, $namespace) {
 		/* check if result is cached */
-		$cache = $this->get($sql_hash);
+		$cache = $this->get($sql_hash, true);
 				
-		if ($cache)					
+		if ($cache && ! $cache['dirty'])					
 			return $cache['contents'];		
 
 		/* execute the query since it was either not in the cache or dirty */
@@ -82,9 +82,9 @@ class db_postgres extends db_base {
 		if ($result) {
 			/* if it was in cache but dirty bit was set, restore */
 			if ($cache)								
-				$this->set($sql_hash, $result);	
+				$this->set($sql_hash, pg_fetch_all($result));	
 			else
-				$this->add($sql_hash, $result, $this->parse_select($sql), $namespace, false);			
+				$this->add($sql_hash, pg_fetch_all($result), $this->parse_select($sql), $namespace, false);			
 							
 			return $result;
 		}		
@@ -103,7 +103,7 @@ class db_postgres extends db_base {
 		$result = pg_query($this->link, $sql);
 		
 		/* check if insert was successfull, if so, mark affected cache lines dirty */		
-		if (result)
+		if ($result)
 			if (pg_affected_rows($result) != 0)				
 				$this->set_m_dirty($this->parse_insert($sql), $namespace);			
 			return $result;
@@ -143,7 +143,7 @@ class db_postgres extends db_base {
 		$result = pg_query($this->link, $sql);
 		
 		/* check if drop was successfull, if so, mark affected cache lines dirty */
-		if (result)
+		if ($result)
 			if (pg_affected_rows($result) != 0)
 				$this->set_m_dirty($this->parse_delete($sql), $namespace);
 			return $result;

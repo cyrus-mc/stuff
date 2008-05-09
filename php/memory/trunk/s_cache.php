@@ -49,7 +49,7 @@ class s_cache extends cache {
 	public function add($key, $data, $overwrite = false) {		
 		
 		/* check if overwrite is true or that the key does not already exist */
-		if ($overwrite || ! $this->cache_lines[$key]) {			
+		if ($overwrite || ! isset($this->cache_lines[$key])) {			
 			/* check to see if cache is at maximum size */		
 			if ($this->max_cache_lines != 0 && $this->cur_cache_lines == $this->max_cache_lines) {
 				/* advance pointer to the end of the array */				
@@ -110,6 +110,9 @@ class s_cache extends cache {
 	
 	/**
 	 * Move element with $key to top of cache_atimes list
+	 * 
+	 * NOTE: this function is only called from within this class by other
+	 *       functions which already verify the existence of $key
 	 * 
 	 * @param string $key
 	 * @return void
