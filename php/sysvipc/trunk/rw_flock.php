@@ -129,10 +129,11 @@ class rw_flock {
      * 
      * @param int $lock_type
      * @param boolean $block
-     * @return boolean
+     * @return void
      */
     private function acquire($lock_type = LOCK_SH, $block = true) {
-    	return flock($this->resource, $lock_type, $block);    	
+    	if (flock($this->resource, $lock_type, $block) == false)
+    		throw Exception("rw_flock::acquire($lock_type, $block) - failed to acquire the requested access.");    	
     }   
 
     /**
@@ -142,7 +143,7 @@ class rw_flock {
      * @return void
      */
     public function release($block = true) {    	
-    	return $this->acquire(LOCK_UN, $block); 
+    	$this->acquire(LOCK_UN, $block); 
     }
 
     /**
