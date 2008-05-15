@@ -10,7 +10,7 @@
 	$Revision: $	
 */
 
-require_once '../../sysvipc/trunk/rw_semaphore.php';
+require_once '../../sysvipc/trunk/rw_flock.php';
 
 class application_container {
 	
@@ -55,7 +55,7 @@ class application_container {
 	 * @access private
 	 * @var object - read/write semaphore
 	 */
-	private $rw_semaphore = null;
+	private $reader_writer = null;
 	
 	/**
 	 * @access private
@@ -81,24 +81,21 @@ class application_container {
 		$this->name = preg_replace('/[^\.\/]*\.\.\//', '', $name);
 		$this->application_home = self::BASE_DIR . $this->name;		
 						
-		/* prevent multiple access */
-		if (!$this->rw_semaphore = new rw_semaphore(__FILE__)) {					
-			self::$errstr = "application_home::__construct - failed to create read/write semaphore.";
-			return false;
-		}
-
 		$is_valid = false;
-		$this->rw_semaphore->write_access();				
+		/* prevent multiple access */
+		$this->reader_writer = new rw_flock($name);
+		$this->reader_writer->write();
+							
 		if (file_exists($this->application_home))
 			$is_valid = $this->reinitialize();		
 		else
-			$is_valid = $this->initialize();			
-
-		$this->rw_semaphore->write_release();
+			$is_valid = $this->initialize();
+						
+		$this->reader_writer->release();							
 		
 		/* check return status and throw exception if found */
 		if (! $is_valid)			
-			throw new Exception($this->get_errstr());		
+			throw new Exception($this->errstr);		
 	}	
 	
 	/**
@@ -108,8 +105,8 @@ class application_container {
 	 */
 	private function initialize() {
 		/* create the application home */
-		if ( !(mkdir($this->application_home) && ($init_file = fopen($this->application_home . '/.init', 'x')) &&
-			fwrite($init_file, date("F j, Y, g:i a"))) )
+		if ( (mkdir($this->application_home) && ($init_file = fopen($this->application_home . '/.init', 'x')) &&
+			fwrite($init_file, date("F j, Y, g:i a"))) == false )
 				$this->set_error("application_container::initialize() - failed to create application home directory.");
 
 		return $this->raise_error();
@@ -169,7 +166,7 @@ class application_container {
 			$this->remove_object($key);								
 					
 		/* lock */
-		$this->rw_semaphore->write_access();
+		$this->reader_writer->write();
 		if (isset($this->objects[$key]))
 			$this->set_error("application_container::add_object($key, ..) - object with key already in application environment.");							
 		else {		
@@ -187,7 +184,7 @@ class application_container {
 		}		
 		
 		/* unlock */
-		$this->rw_semaphore->write_release();
+		$this->reader_writer->release();
 		return $this->raise_error();		
 	}
 	
@@ -200,7 +197,7 @@ class application_container {
 	public function get_object($key) {
 		$object = null;		
 		/* lock */
-		$this->rw_semaphore->read_access();
+		$this->reader_writer->read();
 		if ($this->objects[$key])					
 			if (($serialized_object = @file_get_contents($this->objects[$key]['file'])))				
 				$object = unserialize($serialized_object);
@@ -210,7 +207,7 @@ class application_container {
 			}				
 
 		/* unlock */
-		$this->rw_semaphore->read_release();		
+		$this->reader_writer->release();		
 		return $object;
 	}
 	
@@ -222,7 +219,7 @@ class application_container {
 	 */
 	public function remove_object($key) {
 		/* lock */
-		$this->rw_semaphore->write_access();
+		$this->reader_writer->write();
 		if (isset($this->objects[$key]))
 			if (@unlink($this->objects[$key]['file']))
 				unset($this->objects[$key]);
@@ -232,7 +229,7 @@ class application_container {
 			$this->set_error("application_container::remove_object($key) - object does not exist in application environment.");
 						
 		/* unlock */
-		$this->rw_semaphore->write_release();
+		$this->reader_writer->release();
 		return $this->raise_error();
 	}
 	
@@ -242,7 +239,7 @@ class application_container {
 	 * @return boolean
 	 */
 	public function destroy() {	
-		$this->rw_semaphore->write_access();	
+		$this->reader_writer->write();	
 		/* clean up all stored objects (if anything fails, the rmdir below will fail) */
 		foreach ($this->objects as $key => $objects)
 			$this->remove_object($key);
@@ -251,14 +248,14 @@ class application_container {
 			/* now delete the application environment */
 			if (@rmdir($this->application_home)) {
 				/* remove the semaphore */
-				if (!sem_remove($this->lock_sem_id))
+				if (sem_remove($this->lock_sem_id) == false)
 					$this->set_error("application_container::destroy() - unable to remove semaphore.");				
 			} else	
 				$this->set_error("application_container::destroy() - unable to delete application environment home.");
 		} else
 			$this->set_error("application_container::destroy() - unable to delete application initialization file.");											
 				
-		$this->rw_semaphore->write_release();
+		$this->reader_writer->release();
 		return $this->raise_error();
 	}
 	
@@ -281,9 +278,8 @@ class application_container {
 	private function raise_error() {
 		/* save the current error flag */
 		$current_err_flag = $this->no_error;
-		/* reset error flag and string to default values */
+		/* reset error flag to true */
 		$this->no_error = true;
-		$this->errstr = "";
 		return $current_err_flag;
 	}
 	
