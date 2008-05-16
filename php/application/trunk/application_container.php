@@ -244,16 +244,8 @@ class application_container {
 		foreach ($this->objects as $key => $objects)
 			$this->remove_object($key);
 
-		if (@unlink("$this->application_home/.init")) {			
-			/* now delete the application environment */
-			if (@rmdir($this->application_home)) {
-				/* remove the semaphore */
-				if (sem_remove($this->lock_sem_id) == false)
-					$this->set_error("application_container::destroy() - unable to remove semaphore.");				
-			} else	
-				$this->set_error("application_container::destroy() - unable to delete application environment home.");
-		} else
-			$this->set_error("application_container::destroy() - unable to delete application initialization file.");											
+		if ( (@unlink("$this->application_home/.init") && @rmdir($this->application_home)) == false)			
+			$this->set_error("application_container::destroy() - unable to delete application environment home.");
 				
 		$this->reader_writer->release();
 		return $this->raise_error();
