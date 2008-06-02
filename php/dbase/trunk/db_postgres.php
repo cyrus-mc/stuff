@@ -22,17 +22,16 @@ class db_postgres extends db_base {
 	 * 
 	 * @return boolean
 	 */
-	public function connect() {
-		
+	public function connect() {		
 		/* pg_connect returns connection resource on success, FALSE on failure */
-		$this->link = @pg_connect("host=" . $this->db_host . " dbname=" .
+		$this->link = pg_connect("host=" . $this->db_host . " dbname=" .
 				$this->db_name . " user=" . $this->db_user . " password =" .
 				$this->db_pass . " port=" . $this->db_port);
-								
+										
 		/* check status of link */
 		if ($this->link)
 			return true; /* connection successfull */
-			
+				
 		/* set error string */
 		self::$errstr = "db_postgres::__construct($this->connection_string) - failed to connect to the database resource";
 		return false;		
@@ -45,22 +44,15 @@ class db_postgres extends db_base {
 	 * @param boolean $reconnect
 	 * @return mixed
 	 */
-	public function execute($sql, $namespace = self::GLOBAL_CACHE_LINE, $reconnect = FALSE) {
-		/* make sure we are connected and the connection status is good */
-		if ($this->get_status() == PGSQL_CONNECTION_BAD) {
-			if ($reconnect && ! $this->connect())
-				self::$errstr = "db_postgres::execute(.., $reconnect) - failed to re-connect to the database resource";				
-			else
-				self::$errstr = "db_postgres::execute(.., $reconnect) - connection to resource dead, reconnect not specified";
-			return false;			
-		}		
-		
+	public function execute($sql, $namespace = self::GLOBAL_CACHE_LINE, $reconnect = true) {
+		$sql = strtolower($sql);
+				
 		/* create the cache key */
 		$sql_hash = md5($sql);
 		/* determine type of SQL statement (select, update, insert or other) */
 		$type_of_stmt = "execute_" . substr($sql, 0, strpos($sql, ' '));		
 		
-		return $this->$type_of_stmt($sql, $sql_hash, $namespace);					
+		return $this->$type_of_stmt($sql, $sql_hash, $namespace, $reconnect);					
 	}
 	
 	/**
@@ -70,23 +62,24 @@ class db_postgres extends db_base {
 	 * @param string $sql_hash
 	 * @return boolean 
 	 */
-	public function execute_select($sql, $sql_hash, $namespace) {
+	private function execute_select($sql, $sql_hash, $namespace, $reconnect) {
 		/* check if result is cached */
-		$cache = $this->get($sql_hash, true);
+		$cache = $this->get($sql_hash, false);
 				
-		if ($cache && ! $cache['dirty'])					
+		if ($cache)					
 			return $cache['contents'];		
-
+			
 		/* execute the query since it was either not in the cache or dirty */
-		$result = pg_query($this->link, $sql);				
+		$result = $this->pg_query($sql, $reconnect);				
 		if ($result) {
 			/* if it was in cache but dirty bit was set, restore */
+			$aresult = pg_fetch_all($result);
 			if ($cache)								
-				$this->set($sql_hash, pg_fetch_all($result));	
+				$this->set($sql_hash, $aresult);	
 			else
-				$this->add($sql_hash, pg_fetch_all($result), $this->parse_select($sql), $namespace, false);			
+				$this->add($sql_hash, $aresult, $this->parse_select($sql), $namespace, false);			
 							
-			return $result;
+			return $aresult;
 		}		
 		self::$errstr = "db_postgres::execute_select($sql, ...) - failed to execute :: " . pg_last_error($this->link);
 		return false;		
@@ -99,8 +92,8 @@ class db_postgres extends db_base {
 	 * @param string $sql_hash
 	 * @return boolean
 	 */
-	public function execute_insert($sql, $sql_hash, $namespace) {
-		$result = pg_query($this->link, $sql);
+	private function execute_insert($sql, $sql_hash, $namespace, $reconnect) {
+		$result = $this->pg_query($sql, $reconnect);
 		
 		/* check if insert was successfull, if so, mark affected cache lines dirty */		
 		if ($result)
@@ -119,8 +112,8 @@ class db_postgres extends db_base {
 	 * @param string $sql_hash
 	 * @return boolean
 	 */
-	public function execute_update($sql, $sql_hash, $namespace) {
-		$result = pg_query($this->link, $sql);
+	private function execute_update($sql, $sql_hash, $namespace, $reconnect) {
+		$result = $this->pg_query($sql, $reconnect);
 		
 		/* check if update was successfull, if so, mark affected cache lines dirty */
 		if (result)
@@ -139,8 +132,8 @@ class db_postgres extends db_base {
 	 * @param $sql_hash
 	 * @return boolean
 	 */
-	public function execute_delete($sql, $sql_hash, $namespace) {
-		$result = pg_query($this->link, $sql);
+	private function execute_delete($sql, $sql_hash, $namespace, $reconnect) {
+		$result = $this->pg_query($sql, $reconnect);
 		
 		/* check if drop was successfull, if so, mark affected cache lines dirty */
 		if ($result)
@@ -149,6 +142,23 @@ class db_postgres extends db_base {
 			return $result;
 			
 		self::$errstr = "db_postgres::execute_delete($sql, ...) - failed to execute :: " . pg_last_error($this->link);
+		return false;
+	}
+	
+	/**
+	 * Wrapper around Postgres pq_query. Automatically reconnects to database
+	 * if connection is dead and $reconnect = true
+	 * 
+	 * @param string $sql
+	 * @param boolean $reconnect
+	 * @return mixed
+	 */
+	private function pg_query($sql, $reconnect) {
+	    /* make sure we are connected and the connection status is good */
+		if ( ($this->get_status() == PGSQL_CONNECTION_OK) || ($reconnect && $this->connect()) )
+			return pg_query($this->link, $sql);
+
+		$this->set_error("db_postgres::execute(.., $reconnect) - database connection invalid. Either $reconnect = false or connection failed.");
 		return false;
 	}
 	

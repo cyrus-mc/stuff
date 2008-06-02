@@ -96,10 +96,11 @@ abstract class db_base extends db_cache {
 	 */
 	public function get_connection_string() { return $this->connection_string; }		
 	
-	 /* abstract functions to be defined by inheritting class */
-	 abstract public function connect();
-	 abstract public function disconnect();
-	 abstract public function execute($sql, $namespace = self::GLOBAL_CACHE_LINE, $reconnect = false);	
+	/* abstract functions to be defined in inheritting class */
+	abstract public function connect();
+	abstract public function disconnect();
+	abstract public function execute($sql, $namespace = self::GLBOAL_CACHE_LINE, $reconnect = true);
+	abstract public function get_status();
 }
 
 ?>

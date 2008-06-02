@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>db_interface</name>
+	<name>dbase</name>
 	<comment></comment>
 	<projects>
-		<project>memory_module</project>
+		<project>memory</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
