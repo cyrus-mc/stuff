@@ -34,7 +34,7 @@ class User {
 		
 	/**	 
 	 * @access private
-	 * @var array - list of grups user belongs to by id
+	 * @var array - list of groups user belongs to by id
 	 */
 	private $group_list_by_id = array();
 	
@@ -56,19 +56,26 @@ class User {
 		$this->uid = $id;
 
 		# verify that the supplied groups variable is an array if not null
-		if (! is_null($groups)) {
-			if (is_array($groups)) {						
-				# loop over array and create each group object				
-				foreach ($groups as $key => $value) {					
-					$this->group_list_by_id[$key] = new Group($value, $key);
-					$this->group_list_by_name[$value] = & $this->group_list_by_id[$key];
-				}
-			} else {
-				print "error: supplied groups variable is not an array";
-			}
+		if (! is_null($groups) && is_array($groups)) {
+			# loop over array and create each group object
+			foreach ($groups as $key => $value)
+				$this->add_group($key, $value);				
 		}
 	}
 
+	/**
+	 * Add user to group
+	 * 
+	 * @param int $gid
+	 * @param string $g_name
+	 * @return void
+	 */
+	public function add_group($gid, $g_name) {
+		$n_group = new Group($gid, $g_name);
+		$this->group_list_by_id[$gid] = $n_group;
+		$this->group_list_by_name[$g_name] = $n_group;
+	}
+	
 	/**
 	 * Return the UID for this user
 	 *

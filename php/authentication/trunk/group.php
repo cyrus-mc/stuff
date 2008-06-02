@@ -29,10 +29,10 @@ class Group {
 	/**
 	 * Default constructor
 	 *
-	 * @param string $name
 	 * @param int $id
+	 * @param string $name	 
 	 */
-	public function __construct($name, $id) {
+	public function __construct($id, $name) {
 		$this->groupname = $name;
 		$this->gid = $id;
 	}
