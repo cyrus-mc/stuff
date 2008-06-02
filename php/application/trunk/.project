@@ -3,6 +3,10 @@
 	<name>application</name>
 	<comment></comment>
 	<projects>
+		<project>authentication</project>
+		<project>dbase</project>
+		<project>memory</project>
+		<project>sysvipc</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
