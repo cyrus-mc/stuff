@@ -5,12 +5,14 @@
 	Implementation of an Application Container, used to provide global objects
 	to all requests of an application
    
+	TODO: locking mechanism for returned objects (readers and writers)
+
 	$Author: $
 	$Date: $
 	$Revision: $	
 */
 
-require_once '../../sysvipc/trunk/rw_flock.php';
+require_once 'sysvipc/rw_flock.php';
 
 class application_container {
 	
@@ -67,7 +69,7 @@ class application_container {
 	 * @access protected
 	 * @var boolean
 	 */
-	protected $no_error = true;
+	protected $success = true;
 			
 	/**
 	 * Default constructor. 
@@ -77,9 +79,9 @@ class application_container {
 	 * @return void
 	 */
 	public function __construct($name) {
-		/* remove any leading ../ to prevent access to files outside of BASE_DIR */
-		$this->name = preg_replace('/[^\.\/]*\.\.\//', '', $name);
-		$this->application_home = self::BASE_DIR . $this->name;		
+		/* remove any occurences of ../ to prevent access to files outside of BASE_DIR */
+		$this->name = preg_replace('/\.\.\//', '', $name);
+		$this->application_home = self::BASE_DIR . $this->name;
 						
 		$is_valid = false;
 		/* prevent multiple access */
@@ -198,13 +200,13 @@ class application_container {
 		$object = null;		
 		/* lock */
 		$this->reader_writer->read();
-		if ($this->objects[$key])					
+		if (isset($this->objects[$key]))					
 			if (($serialized_object = @file_get_contents($this->objects[$key]['file'])))				
 				$object = unserialize($serialized_object);
 			else {
 				$this->set_error("application_container::get_object($key) - failed to open serialized object.");
 				$object = $this->raise_error();
-			}				
+			}						
 
 		/* unlock */
 		$this->reader_writer->release();		
@@ -259,7 +261,7 @@ class application_container {
 	 */
 	private function set_error($string) {
 		$this->errstr = $string;
-		$this->no_error = false;
+		$this->success = false;
 	}
 	
 	/**
@@ -269,9 +271,9 @@ class application_container {
 	 */
 	private function raise_error() {
 		/* save the current error flag */
-		$current_err_flag = $this->no_error;
+		$current_err_flag = $this->success;
 		/* reset error flag to true */
-		$this->no_error = true;
+		$this->success = true;
 		return $current_err_flag;
 	}
 	
