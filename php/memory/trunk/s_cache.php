@@ -47,7 +47,6 @@ class s_cache extends cache {
 	 * @return int
 	 */
 	public function add($key, $data, $overwrite = false) {		
-		
 		/* check if overwrite is true or that the key does not already exist */
 		if ($overwrite || ! isset($this->cache_lines[$key])) {			
 			/* check to see if cache is at maximum size */		
@@ -59,10 +58,10 @@ class s_cache extends cache {
 			}
 			$this->cache_lines = array_merge(array($key => array('contents' => $data, 'dirty' => false)), $this->cache_lines);
 			$this->cur_cache_lines++;
-			return true;
-		}
-		self::$errstr = "s_cache::add($key, ...) - overwrite = $overwrite - failed to add data to cache.";
-		return false;		
+		} else
+			$this->set_error("s_cache::add($key, ...) - overwrite = $overwrite - failed to add data to cache.");
+
+		return $this->raise_error();		
 	}			
 		
 	/**
@@ -72,11 +71,10 @@ class s_cache extends cache {
 	 * @return mixed
 	 */
 	public function get($key, $return_dirty = false) {
-		if (($element = parent::get($key, $return_dirty))) {
+		if (($element = parent::get($key, $return_dirty)))
 			$this->update_access_time($key);
-			return $element;
-		}
-		return false;
+		
+		return $element;		
 	}
 	
 	/**
@@ -87,11 +85,10 @@ class s_cache extends cache {
 	 * @return boolean
 	 */
 	public function set($key, $data) {
-		if (parent::set($key, $data)) {
+		if (($return_value = parent::set($key, $data)))
 			$this->update_access_time($key);
-			return true;
-		}
-		return false;
+			
+		return $return_value;
 	}
 	
 	/**
@@ -101,11 +98,10 @@ class s_cache extends cache {
 	 * @return boolean
 	 */
 	public function remove($key) {
-		if (parent::remove($key)) {			
-			$this->cur_cache_lines--;
-			return true;
-		}
-		return false;
+		if (($return_value = parent::remove($key)))			
+			$this->cur_cache_lines--;			
+		
+		return $return_value;
 	}		
 	
 	/**

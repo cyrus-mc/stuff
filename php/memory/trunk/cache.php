@@ -26,11 +26,17 @@ class cache {
 	static protected $errstr = "";
 	
 	/**
+	 * @access protected
+	 * @var boolean
+	 */
+	protected $success = true;
+	
+	/**
 	 * Default constructor
 	 * 
 	 * Initialize the size of the cache and zero out all cache lines
 	 */
-	public function __construct() {			
+	public function __construct() {
 		$this->clear_cache();			
 	}	
 	
@@ -63,12 +69,12 @@ class cache {
 	 * @return boolean
 	 */
 	public function add($key, $data, $overwrite = false) {			
-		if ($overwrite || ! isset($this->cache_lines[$key])) {
-			$this->cache_lines[$key] = array('contents' => $data, 'dirty' => false);			
-			return true;
-		}		
-		self::$errstr = "cache::add($key, ...) - overwrite = $overwrite - key already exists in cache.";
-		return false;
+		if ($overwrite || ! isset($this->cache_lines[$key]))
+			$this->cache_lines[$key] = array('contents' => $data, 'dirty' => false);
+		else 
+			$this->set_error("cache::add($key, ...) - overwrite = $overwrite - key already exists in cache.");
+			
+		return $this->raise_error();
 	}
 	
 	/* end definition of abstract members */
@@ -79,21 +85,22 @@ class cache {
 	 * @param string $key
 	 * @return mixed
 	 */
-	public function get($key, $return_dirty = false) {		
+	public function get($key, $return_dirty = false) {
+		$element = null;
+				
 		if (isset($this->cache_lines[$key])) {
 			$element = $this->cache_lines[$key];
 			/* update cache counters */
-			$this->dirty_cache_hits += (int)$element['dirty'];
+			$this->dirty_cache_hits += (int) $element['dirty'];
 			$this->clean_cache_hits += (int) !$element['dirty'];
-			if (!$element['dirty'] || $return_dirty)
-				return $element;
-
-			self::$errstr = "cache::get($key, $return_dirty) - specified key found but cache dirty.";
-			return false;
-		}		
-		$this->cache_misses++;
-		self::$errstr = "cache::get($key) - specified key not in cache.";
-		return false;
+			if ($element['dirty'] && !$return_dirty) {				
+				$this->set_error("cache::get($key, $return_dirty) - specified key found but cache dirty.");
+				$element = $this->raise_error();
+			}			
+		} else
+			$this->cache_misses++;		
+		
+		return $element;
 	}		
 	
 	/**
@@ -106,11 +113,11 @@ class cache {
 	public function set($key, $data) {		
 		if (isset($this->cache_lines[$key])) {			
 			$this->cache_lines[$key]['contents'] = $data;
-			$this->cache_lines[$key]['dirty'] = false;			
-			return true;
-		}		
-		self::$errstr = "cache::set($key, ...) - key does not exist.";
-		return false;
+			$this->cache_lines[$key]['dirty'] = false;
+		} else
+			$this->set_error("cache::set($key, ...) - key does not exist.");
+			
+		return $this->raise_error();					
 	}					
 	
 	/**
@@ -130,12 +137,12 @@ class cache {
 	 * @return boolean
 	 */
 	public function remove($key) {		
-		if (isset($this->cache_lines[$key])) {	
+		if (isset($this->cache_lines[$key]))
 			unset($this->cache_lines[$key]);
-			return true;
-		}
-		self::$errstr = "cache::remove($key, ...) - key does not exist in cache.";
-		return false;
+		else
+			$this->set_error("cache::remove($key, ...) - key does not exist in cache.");
+			
+		return $this->raise_error();
 	}
 	
 	/**
@@ -145,12 +152,12 @@ class cache {
 	 * @return void
 	 */
 	public function set_dirty($key) {		
-		if (isset($this->cache_lines[$key])) {			
-			$this->cache_lines[$key]['dirty'] = true;
-			return true;
-		}
-		self::$errstr = "cache::set_dirty($key) - key does not exist in cache.";
-		return false;
+		if (isset($this->cache_lines[$key]))			
+			$this->cache_lines[$key]['dirty'] = true;			
+		else
+			$this->set_error("cache::set_dirty($key) - key does not exist in cache.");
+		
+		return $this->raise_error();
 	}
 	
 	/**
@@ -201,11 +208,35 @@ class cache {
 	}
 	
 	/**
-	 * Print the error string
+	 * Set the error string and raise error flag
 	 * 
-	 * @return void
+	 * @param string - error description
+	 * @return void;
 	 */
-	public function print_err() { print self::$errstr . "\n"; }
+	protected function set_error($string) {
+		$this->errstr = $string;
+		$this->success = false;
+	}
+	
+	/**
+	 * Return the error flag (true means no error, false indicates failure)
+	 * 
+	 * @return boolean
+	 */
+	protected function raise_error() {
+		/* save the current error flag */
+		$current_err_flag = $this->success;
+		/* reset error flag to true */
+		$this->success = true;
+		return $current_err_flag;
+	}
+	
+	/**
+	 * Return the current error string
+	 * 
+	 * @return string	 
+	 */
+	public function get_errstr() { return $this->errstr; }	
 	
 	/**
 	 * Print contents of cache

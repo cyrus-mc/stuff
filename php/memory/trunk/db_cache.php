@@ -43,13 +43,13 @@ abstract class db_cache extends s_cache {
 		$start_index = 0;
 		$last_index = 0;
 		$string_length = strlen($sql);
-		$table_names = "";
-		while (($last_index = stripos($sql, 'from ', $start_index))) {		
-			preg_match('/from\s+([[:alnum:]]+(?:,\s[[:alnum:]]*)?\s?).*/', substr($sql, $last_index, $string_length), $out);
-			$start_index = $last_index + 5;			
+		$table_names = "";		
+		while (($last_index = stripos($sql, 'from ', $start_index))) {
+			preg_match('/from\s+([[:alnum:]_]+(?:,\s+[[:alnum:]_]+)*)/', substr($sql, $last_index, $string_length), $out);			
+			$start_index = $last_index + 5;
 			$table_names .= $out[1];
 		}
-		return split(" ", str_replace(',', '', $table_names));		
+		return split(" ", str_replace(',', '', $table_names));
 	}
 	
 	/**
