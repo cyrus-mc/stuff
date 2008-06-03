@@ -39,7 +39,7 @@ abstract class db_cache extends s_cache {
 	 * @param string $sql
 	 * @return array
 	 */
-	protected function parse_select($sql) {		
+	protected function parse_select($sql) {
 		$start_index = 0;
 		$last_index = 0;
 		$string_length = strlen($sql);
@@ -107,7 +107,7 @@ abstract class db_cache extends s_cache {
 	 * @return boolean 
 	 */
 	 public function add($sql_hash, $data, array $table_names, $namespace, $overwrite = false) {	 		 	
-	 	if (parent::add($sql_hash, $data, $overwrite)) {	 			 			 		
+	 	if ( ($return_value = parent::add($sql_hash, $data, $overwrite)) ) {	 			 			 		
 	 		/* parse the statement and update the two maintained hash tables */
 	 		foreach ($table_names as $table) {
 	 			if (! isset($this->table_to_key_mappings[$table]))
@@ -119,27 +119,25 @@ abstract class db_cache extends s_cache {
 	 				$this->key_to_table_mappings[$sql_hash] = array();
 	 				
 	 			$this->key_to_table_mappings[$sql_hash][$table] = $namespace;
-	 		}	 			 	
-	 		return true;
+	 		}	 		
 	 	}
-	 	return false;	 	
+	 	return $return_value;	 	
 	 }
 	
 	/**
 	 * Remove mapping between key and table and vice versa
 	 * 
 	 * @param string $key
-	 * @return void
+	 * @return boolean
 	 */
 	 public function remove($key) {	 	
-	 	if (parent::remove($key)) {
+	 	if ( ($return_value = parent::remove($key)) ) {
 	 		foreach ($this->key_to_table_mappings[$key] as $table => $data)
 	 			unset($this->table_to_key_mappings[$table][$key]);
 	 				
-			unset($this->key_to_table_mappings[$key]);
-			return true;	
+			unset($this->key_to_table_mappings[$key]);			
 	 	}
-	 	return false;	 	
+	 	return $return_value;
 	 }
 	 	 
 	 /**

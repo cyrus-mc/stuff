@@ -49,9 +49,8 @@ abstract class db_base extends db_cache {
 		list($this->db_user, $this->db_pass, $this->db_name, $this->db_host, $this->db_port) = preg_split("/:|@|\./", $connection_string);
 
 		/* check that supplied port is a valid numeric value */
-		if (! ereg("^([1-9][0-9]{1,4})", $this->db_port)) {		
-			self::$errstr = "db_common_cache::__construct($connection_string) - invalid port: $db_port - value must be between 0 and 65535";		
-		}
+		if (! ereg("^([1-9][0-9]{1,4})", $this->db_port))
+			throw new Exception("db_common_cache::__construct($connection_string) - invalid port: $db_port - value must be between 0 and 65535");		
 	}
 	
 	/**

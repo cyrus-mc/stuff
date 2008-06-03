@@ -44,7 +44,7 @@ class s_cache extends cache {
 	 * 
 	 * @param string $key
 	 * @param mixed $data
-	 * @return int
+	 * @return boolean
 	 */
 	public function add($key, $data, $overwrite = false) {		
 		/* check if overwrite is true or that the key does not already exist */
@@ -58,10 +58,11 @@ class s_cache extends cache {
 			}
 			$this->cache_lines = array_merge(array($key => array('contents' => $data, 'dirty' => false)), $this->cache_lines);
 			$this->cur_cache_lines++;
-		} else
-			$this->set_error("s_cache::add($key, ...) - overwrite = $overwrite - failed to add data to cache.");
-
-		return $this->raise_error();		
+			return true;
+		} 
+		
+		self::$errstr = "s_cache::add($key, ...) - overwrite = $overwrite - failed to add data to cache.";
+		return false;
 	}			
 		
 	/**

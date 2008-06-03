@@ -158,7 +158,7 @@ class db_postgres extends db_base {
 		if ( ($this->get_status() == PGSQL_CONNECTION_OK) || ($reconnect && $this->connect()) )
 			return pg_query($this->link, $sql);
 
-		$this->set_error("db_postgres::execute(.., $reconnect) - database connection invalid. Either $reconnect = false or connection failed.");
+		self::$errstr = "db_postgres::execute(.., $reconnect) - database connection invalid. Either $reconnect = false or connection failed.";
 		return false;
 	}
 	

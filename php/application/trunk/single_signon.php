@@ -55,12 +55,6 @@ class single_signon {
 	 * @var string - holds the latest error message
 	 */
 	protected $errstr = "";
-	
-	/**
-	 * @access protected
-	 * @var boolean
-	 */
-	protected $success = true;
 			
 	/**
 	 * Default constructor. 
@@ -92,10 +86,13 @@ class single_signon {
 			$valid_apps = $db_handle->execute("SELECT ss_applications.aid, a_name FROM ss_applications, u_applications WHERE
 				ss_applications.aid = u_applications.aid AND u_applications.uid = " . $this->user->get_id());
 			
-			foreach ($valid_apps as $application) {
-				$this->app_list_by_id[$application['aid']] = $application['a_name'];
-				$this->app_list_by_name[$application['a_name']] = $application['aid'];
-			}			
+			if ($valid_apps) {
+				foreach ($valid_apps as $application) {
+					$this->app_list_by_id[$application['aid']] = $application['a_name'];
+					$this->app_list_by_name[$application['a_name']] = $application['aid'];
+				}
+			} else
+				throw new Exception("single_signon::__construct($username, ...) - failed to query users applications.");
 		} else
 			throw new Exception("single_signon::__construct($username, ...) - login failed. Either supplied username or password is invalid.");					
 	}	
@@ -107,13 +104,15 @@ class single_signon {
 	 * @return boolean
 	 */
 	public function is_valid() {		
-		$current_time = time();				
+		$current_time = time();
+		
 		/* compare the login time and validate if login has expired */
-		
-		if ($this->valid_time != 0 && ($this->login_valid_till < $current_time))			
-			$this->set_error("single_signon::is_valid() - login has expired ($this->login_valid_till < $current_time).");		
-		
-		return $this->raise_error();
+		if ($this->valid_time != 0 && ($this->login_valid_till < $current_time)) {
+			self::$errstr = "single_signon::is_valid() - login has expired ($this->login_valid_till < $current_time).";
+			return false;
+		}
+
+		return true;
 	}
 	
 	/**
@@ -122,37 +121,13 @@ class single_signon {
 	 * @param string $app_name
 	 * @return boolean
 	 */
-	public function check_application($app_name) { return isset($this->app_list_by_name[$app_name]); }		
-	
-	/**
-	 * Set the error string and raise error flag
-	 * 
-	 * @param string - error description
-	 * @return void;
-	 */
-	private function set_error($string) {
-		$this->errstr = $string;
-		$this->success = false;
-	}
-	
-	/**
-	 * Return the error flag (true means no error, false indicates failure)
-	 * 
-	 * @return boolean
-	 */
-	private function raise_error() {
-		/* save the current error flag */
-		$current_err_flag = $this->success;
-		/* reset error flag to true */
-		$this->success = true;
-		return $current_err_flag;
-	}
+	public function check_application($app_name) { return isset($this->app_list_by_name[$app_name]); }
 	
 	/**
 	 * Return the current error string
 	 * 
 	 * @return string	 
 	 */
-	public function get_errstr() { return $this->errstr; }	
+	public function get_errstr() { return $this->errstr; }
 }
 ?>

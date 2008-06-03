@@ -33,12 +33,6 @@ class session {
 	protected $errstr = "";
 	
 	/**
-	 * @access protected
-	 * @var boolean
-	 */
-	protected $success = true;
-	
-	/**
 	 * Default constructor
 	 * 
 	 * NOTE: ensure all necessary include files are included prior to
@@ -49,16 +43,16 @@ class session {
 		session_start();
 		
 		/* set the $response variable */
-		//if ( count($HTTP_POST_VARS) > 0 )
-		//	$this->reponse = $HTTP_POST_VARS;
-		//else
-		//	$this->response = $HTTP_GET_VARS;
+		if ( count($HTTP_POST_VARS) > 0 )
+			$this->reponse = $HTTP_POST_VARS;
+		else
+			$this->response = $HTTP_GET_VARS;
 			
 		/* set the base URL - take into consideration user directories */		
-		//if ($_SERVER['REQUEST_URI'][1] == '~')
-		//	$this->base_url = '/' . substr($_SERVER['REQUEST_URI'], 1, strpos($_SERVER['REQUEST_URI'], '/', 1) - 1);
-		//else
-		//	$this->base_url = "";		
+		if ($_SERVER['REQUEST_URI'][1] == '~')
+			$this->base_url = '/' . substr($_SERVER['REQUEST_URI'], 1, strpos($_SERVER['REQUEST_URI'], '/', 1) - 1);
+		else
+			$this->base_url = "";		
 	}
 	
 	/**
@@ -68,13 +62,13 @@ class session {
 	 * @return mixed
 	 */
 	public function session_get($key) {
-		$object = false;		
-		if (isset($_SESSION[$key]))
+		if (isset($_SESSION[$key])) {
 			$object = $_SESSION[$key];
-		else
-			$this->set_error("session::get($key) - not found in session.");
+			return $object;
+		}
 		
-		return $object;
+		self::$errstr = "session::get($key) - not found in session.";
+		return false;
 	}
 	
 	/**
@@ -82,15 +76,16 @@ class session {
 	 * 
 	 * @param string $key
 	 * @param mixed $data
-	 * @return void
+	 * @return boolean
 	 */
 	public function session_register($key, $data, $overwrite = false) {		
-		if ($overwrite || ! isset($_SESSION[$key]))
-			$_SESSION[$key] = $data;			
-		else 
-			$this->set_error("session::session_register($key, ...) - overwrite = $overwrite - key already exists in session.");
+		if ($overwrite || ! isset($_SESSION[$key])) {
+			$_SESSION[$key] = $data;
+			return true;			
+		}
 		
-		$this->raise_error();
+		self::$errstr = "session::session_register($key, ...) - overwrite = $overwrite - key already exists in session.";
+		return false;
 	}
 	
 	/**
@@ -100,12 +95,13 @@ class session {
 	 * @return boolean
 	 */
 	public function session_unregister($key) {
-		if (isset($_SESSION[$key]))
-			unset($_SESSION[$key]);	 
-		else
-			$this->set_error("session::session_unregister($key) - specified key not found in session.");
-	
-		$this->raise_error();
+		if (isset($_SESSION[$key])) {
+			unset($_SESSION[$key]);
+			return true;
+		}
+		
+		self::$errstr = "session::session_unregister($key) - specified key not found in session.";	
+		return false;
 	}
 	
 	/**
@@ -113,23 +109,24 @@ class session {
 	 * 
 	 * @param string $key
 	 * @param int $flags
-	 * @return string
+	 * @return mixed
 	 */
 	public function query_get($key, $flags) {
-		$query_value = "";
-		if (isset($this->response[$key]))
+		if (isset($this->response[$key])) {
 			$query_value = $this->response[$key];
-			
-			/* perform safey checks on query string */
+
+			/* perform safety checks on query string */
 			if ( ($flags & self::FILESYSTEM_SAFE) == self::FILESYSTEM_SAFE )
-				$this->filesystem_safe($query_value);				
+				$this->filesystem_safe($query_value);
 			
 			if ( ($flags & self::SQL_SAFE) == self::SQL_SAFE )
-				$this->sql_safe($query_value);				
-		else
-			$this->set_error("session::query_get($key, ..) - specified key not found in query.");
+				$this->sql_safe($query_value);
 
-		return $query_value;
+			return $query_value;
+		}
+		
+		self::$errstr = "session::query_get($key, ..) - specified key not found in query.";
+		return false;
 	}
 
 	/**
@@ -151,29 +148,6 @@ class session {
 	 */
 	private function sql_safe(&$qvalue) {
 		/* TODO: complete */
-	}
-	/**
-	 * Set the error string and raise error flag
-	 * 
-	 * @param string - error description
-	 * @return void;
-	 */
-	private function set_error($string) {
-		$this->errstr = $string;
-		$this->success = false;
-	}
-	
-	/**
-	 * Return the error flag (true means no error, false indicates failure)
-	 * 
-	 * @return boolean
-	 */
-	private function raise_error() {
-		/* save the current error flag */
-		$current_err_flag = $this->success;
-		/* reset error flag to true */
-		$this->success = true;
-		return $current_err_flag;
 	}
 }
 ?>
