@@ -9,7 +9,7 @@
    $Revision: $
 */
 
-require_once '../../memory/trunk/db_cache.php';
+require_once 'memory/db_cache.php';
 
 /**
  * Abstract class for database access utlizing a caching mechanism

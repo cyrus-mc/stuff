@@ -33,7 +33,7 @@ class db_postgres extends db_base {
 			return true; /* connection successfull */
 				
 		/* set error string */
-		self::$errstr = "db_postgres::__construct($this->connection_string) - failed to connect to the database resource";
+		$this->errstr = "db_postgres::__construct($this->connection_string) - failed to connect to the database resource";
 		return false;		
 	}
 	
@@ -81,7 +81,7 @@ class db_postgres extends db_base {
 							
 			return $aresult;
 		}		
-		self::$errstr = "db_postgres::execute_select($sql, ...) - failed to execute :: " . pg_last_error($this->link);
+		$this->errstr = "db_postgres::execute_select($sql, ...) - failed to execute :: " . pg_last_error($this->link);
 		return false;		
 	}
 	
@@ -101,7 +101,7 @@ class db_postgres extends db_base {
 				$this->set_m_dirty($this->parse_insert($sql), $namespace);			
 			return $result;
 		
-		self::$errstr = "db_postgres::execute_insert($sql, ...) - failed to execute :: " . pg_last_error($this->link);
+		$this->errstr = "db_postgres::execute_insert($sql, ...) - failed to execute :: " . pg_last_error($this->link);
 		return $false;
 	}
 	
@@ -121,7 +121,7 @@ class db_postgres extends db_base {
 				$this->set_m_dirty($this->parse_update($sql), $namespace);			
 			return $result;
 		
-		self::$errstr = "db_postgres::execute_update($sql, ...) - failed to execute :: " . pg_last_error($this->link);
+		$this->errstr = "db_postgres::execute_update($sql, ...) - failed to execute :: " . pg_last_error($this->link);
 		return false;
 	}
 	
@@ -141,7 +141,7 @@ class db_postgres extends db_base {
 				$this->set_m_dirty($this->parse_delete($sql), $namespace);
 			return $result;
 			
-		self::$errstr = "db_postgres::execute_delete($sql, ...) - failed to execute :: " . pg_last_error($this->link);
+		$this->errstr = "db_postgres::execute_delete($sql, ...) - failed to execute :: " . pg_last_error($this->link);
 		return false;
 	}
 	
@@ -158,7 +158,7 @@ class db_postgres extends db_base {
 		if ( ($this->get_status() == PGSQL_CONNECTION_OK) || ($reconnect && $this->connect()) )
 			return pg_query($this->link, $sql);
 
-		self::$errstr = "db_postgres::execute(.., $reconnect) - database connection invalid. Either $reconnect = false or connection failed.";
+		$this->errstr = "db_postgres::execute(.., $reconnect) - database connection invalid. Either $reconnect = false or connection failed.";
 		return false;
 	}
 	

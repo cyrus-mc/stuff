@@ -68,7 +68,7 @@ class cache {
 			return true;
 		}
 		 
-		self::$errstr = "cache::add($key, ...) - overwrite = $overwrite - key already exists in cache.";		
+		$this->errstr = "cache::add($key, ...) - overwrite = false - key already exists in cache.";		
 		return false;
 	}
 	
@@ -87,7 +87,7 @@ class cache {
 			$this->dirty_cache_hits += (int) $element['dirty'];
 			$this->clean_cache_hits += (int) !$element['dirty'];
 			if ($element['dirty'] && !$return_dirty) {
-				self::$errstr = "cache::get($key, $return_dirty) - specified key found but cache dirty.";
+				$this->errstr = "cache::get($key, ..) - return_dirty = false - specified key found but cache dirty.";
 				return false;				
 			}
 			return $element;
@@ -111,7 +111,7 @@ class cache {
 			return true;
 		} 
 		
-		self::$errstr = "cache::set($key, ...) - key does not exist.";
+		$this->errstr = "cache::set($key, ...) - key does not exist.";
 		return false;
 	}					
 	
@@ -137,7 +137,7 @@ class cache {
 			return true;
 		} 
 		
-		self::$errstr = "cache::remove($key, ...) - key does not exist in cache.";
+		$this->errstr = "cache::remove($key, ...) - key does not exist in cache.";
 		return false;
 	}
 	
@@ -153,7 +153,7 @@ class cache {
 			return true;			
 		}
 		
-		self::$errstr = "cache::set_dirty($key) - key does not exist in cache.";
+		$this->errstr = "cache::set_dirty($key) - key does not exist in cache.";
 		return false;
 	}
 	

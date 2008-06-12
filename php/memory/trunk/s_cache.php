@@ -61,7 +61,7 @@ class s_cache extends cache {
 			return true;
 		} 
 		
-		self::$errstr = "s_cache::add($key, ...) - overwrite = $overwrite - failed to add data to cache.";
+		$this->errstr = "s_cache::add($key, ...) - overwrite = false - failed to add data to cache.";
 		return false;
 	}			
 		
