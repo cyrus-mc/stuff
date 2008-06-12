@@ -43,10 +43,10 @@ class session {
 		session_start();
 		
 		/* set the $response variable */
-		if ( count($HTTP_POST_VARS) > 0 )
-			$this->reponse = $HTTP_POST_VARS;
-		else
-			$this->response = $HTTP_GET_VARS;
+		if ( count($GLOBALS['HTTP_POST_VARS']) > 0 )			
+			$this->response = $GLOBALS['HTTP_POST_VARS'];
+		else			
+			$this->response = $GLOBALS['HTTP_GET_VARS'];
 			
 		/* set the base URL - take into consideration user directories */		
 		if ($_SERVER['REQUEST_URI'][1] == '~')
@@ -67,7 +67,7 @@ class session {
 			return $object;
 		}
 		
-		self::$errstr = "session::get($key) - not found in session.";
+		$this->errstr = "session::get($key) - not found in session.";
 		return false;
 	}
 	
@@ -84,7 +84,7 @@ class session {
 			return true;			
 		}
 		
-		self::$errstr = "session::session_register($key, ...) - overwrite = $overwrite - key already exists in session.";
+		$this->errstr = "session::session_register($key, ...) - overwrite = $overwrite - key already exists in session.";
 		return false;
 	}
 	
@@ -100,7 +100,7 @@ class session {
 			return true;
 		}
 		
-		self::$errstr = "session::session_unregister($key) - specified key not found in session.";	
+		$this->errstr = "session::session_unregister($key) - specified key not found in session.";	
 		return false;
 	}
 	
@@ -111,7 +111,7 @@ class session {
 	 * @param int $flags
 	 * @return mixed
 	 */
-	public function query_get($key, $flags) {
+	public function query_get($key, $flags) {		
 		if (isset($this->response[$key])) {
 			$query_value = $this->response[$key];
 
@@ -125,7 +125,7 @@ class session {
 			return $query_value;
 		}
 		
-		self::$errstr = "session::query_get($key, ..) - specified key not found in query.";
+		$this->errstr = "session::query_get($key, ..) - specified key not found in query.";
 		return false;
 	}
 

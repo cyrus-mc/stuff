@@ -12,7 +12,7 @@
 	$Revision: $	
 */
 
-require_once 'sysvipc/rw_flock.php';
+require_once 'sysvipc/rw_fifo.php';
 
 class application_container {
 	
@@ -85,21 +85,21 @@ class application_container {
 						
 		$is_valid = false;
 		/* prevent multiple access */
-		$this->reader_writer = new rw_flock($name);
-		$this->reader_writer->write();
+		$this->reader_writer = new rw_fifo($name);
+		$this->reader_writer->write_request();
 							
 		if (file_exists($this->application_home))
 			$is_valid = $this->reinitialize();		
 		else
 			$is_valid = $this->initialize();
 						
-		$this->reader_writer->release();							
+		$this->reader_writer->write_release();							
 		
 		/* check return status and throw exception if found */
 		if (! $is_valid)			
 			throw new Exception($this->errstr);		
 	}	
-	
+		
 	/**
 	 * Initialize the application container	 
 	 * 
@@ -151,7 +151,7 @@ class application_container {
 		if (isset($this->objects[$key]))
 			$this->set_error("application_container::register_object($key) - object with key already registered with application.");
 		else
-			$this->objects[$key] = array('file' => $filename);
+			$this->objects[$key] = array('file' => $filename, 'sem_id' => sem_get(ftok($filename, 'a'), 1, 0666, true));
 			
 		return $this->raise_error();			
 	}
@@ -159,16 +159,18 @@ class application_container {
 	/**
 	 * Add an object with the application environment
 	 * 
+	 * Creates lock file used for concurrency 
+	 * 
 	 * @param string $key
-	 * @param mixed $object_type
-	 * @return void
+	 * @param mixed $object
+	 * @return boolean
 	 */
-	public function add_object($key, $object, $overwrite = false) {
+	public function add_object($key, &$object, $overwrite = false) {
 		if ($overwrite)
 			$this->remove_object($key);								
 					
 		/* lock */
-		$this->reader_writer->write();
+		//$this->reader_writer->write_request();
 		if (isset($this->objects[$key]))
 			$this->set_error("application_container::add_object($key, ..) - object with key already in application environment.");							
 		else {		
@@ -179,15 +181,39 @@ class application_container {
 			else
 				$object_file .= self::OBJECT_TYPE_VARIABLE;
 					
-			if ( ($object_fd = fopen($object_file, "x")) && fwrite($object_fd, serialize($object)) )
-				$this->objects[$key] = array('file' => $object_file);
-			else
+			if ( ($object_fd = fopen($object_file, "x")) && fwrite($object_fd, serialize($object)) ) {
+				$this->objects[$key] = array('file' => $object_file, 'sem_id' => sem_get(ftok($object_file, 'a'), 1, 0666, true));
+				fclose($object_fd);
+			} else
 				$this->set_error("application_container::add_object($key, ..) - failed to write object to application evironment.");							
 		}		
 		
+		/* clear the object, forcing users to get it (ie: lock) */
+		$object = null;
 		/* unlock */
-		$this->reader_writer->release();
+		//$this->reader_writer->write_release();
 		return $this->raise_error();		
+	}
+	
+	/**
+	 * Set the object referenced by $key in application environment
+	 * 
+	 * @param string $key
+	 * @param mixed $object
+	 * @return boolean
+	 */
+	public function set_object($key, $object) {		
+		if (isset($this->objects[$key])) {
+			if ( ($object_fd = fopen($this->objects[$key]['file'], "w")) && fwrite($object_fd, serialize($object)) )
+				fclose($object_fd);
+			else
+				$this->set_error("application_container::set_object($key, ...) - failed to write object to application environment.");
+
+			sem_release($this->objects[$key]['sem_id']);			
+		} else
+			$this->set_error("application_container::set_object($key, ...) - object does not exist in application environment.");
+
+		return $this->raise_error();
 	}
 	
 	/**
@@ -197,21 +223,22 @@ class application_container {
 	 * @return mixed
 	 */
 	public function get_object($key) {
-		$object = null;		
-		/* lock */
-		$this->reader_writer->read();
+		$object = null;
+		
 		if (isset($this->objects[$key]))					
-			if (($serialized_object = @file_get_contents($this->objects[$key]['file'])))				
+			if (($serialized_object = @file_get_contents($this->objects[$key]['file']))) {
 				$object = unserialize($serialized_object);
-			else {
+				/* acquire the semaphore */
+				sem_acquire($this->objects[$key]['sem_id']);
+			} else {
 				$this->set_error("application_container::get_object($key) - failed to open serialized object.");
 				$object = $this->raise_error();
 			}						
 
-		/* unlock */
-		$this->reader_writer->release();		
 		return $object;
 	}
+	
+	public function has_object($key) { return isset($this->objects[$key]); }
 	
 	/**
 	 * Remove an object from the application environment
@@ -220,18 +247,16 @@ class application_container {
 	 * @return boolean
 	 */
 	public function remove_object($key) {
-		/* lock */
-		$this->reader_writer->write();
 		if (isset($this->objects[$key]))
-			if (@unlink($this->objects[$key]['file']))
+			if (@unlink($this->objects[$key]['file'])) {
+				/* remove the semaphore */
+				sem_remove($this->objects[$key]['sem_id']);
 				unset($this->objects[$key]);
-			else			
+			} else			
 				$this->set_error("application_container::remove_object($key) - failed to remove object from application environment.");
 		else
 			$this->set_error("application_container::remove_object($key) - object does not exist in application environment.");
-						
-		/* unlock */
-		$this->reader_writer->release();
+
 		return $this->raise_error();
 	}
 	
@@ -241,17 +266,45 @@ class application_container {
 	 * @return boolean
 	 */
 	public function destroy() {	
-		$this->reader_writer->write();	
+		$this->reader_writer->write_request();	
 		/* clean up all stored objects (if anything fails, the rmdir below will fail) */
 		foreach ($this->objects as $key => $objects)
-			$this->remove_object($key);
+			$this->remove_object($key);		
 
 		if ( (@unlink("$this->application_home/.init") && @rmdir($this->application_home)) == false)			
 			$this->set_error("application_container::destroy() - unable to delete application environment home.");
 				
-		$this->reader_writer->release();
+		$this->reader_writer->write_release();
 		return $this->raise_error();
 	}
+	
+	/**
+	 * Lock read access to the application environment
+	 * 
+	 * @return void
+	 */
+	public function lock_read() { $this->reader_writer->read_request(); }
+	
+	/**
+	 * Release lock read access to the application environment
+	 * 
+	 * @return void
+	 */
+	public function read_release() { $this->reader_writer->read_release(); }
+	
+	/**
+	 * Lock write access to the application environment
+	 * 
+	 * @return void
+	 */
+	public function lock_write() { $this->reader_writer->write_request(); }
+	
+	/**
+	 * Release lock write access to the application environment
+	 * 
+	 * @return void
+	 */
+	public function write_release() { $this->reader_writer->write_release(); }
 	
 	/**
 	 * Set the error string and raise error flag
