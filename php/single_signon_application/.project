@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>single_signon_application</name>
+	<comment></comment>
+	<projects>
+		<project>application</project>
+		<project>authentication</project>
+		<project>dbase</project>
+		<project>memory</project>
+		<project>sysvipc</project>
+	</projects>
+	<buildSpec>
+		<buildCommand>
+			<name>org.eclipse.php.core.PhpIncrementalProjectBuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+		<buildCommand>
+			<name>org.eclipse.wst.validation.validationbuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+		<buildCommand>
+			<name>org.eclipse.ui.externaltools.ExternalToolBuilder</name>
+			<triggers>full,incremental,</triggers>
+			<arguments>
+				<dictionary>
+					<key>LaunchConfigHandle</key>
+					<value>&lt;project&gt;/.externalToolBuilders/publish_to_server.launch</value>
+				</dictionary>
+			</arguments>
+		</buildCommand>
+	</buildSpec>
+	<natures>
+		<nature>org.eclipse.php.core.PHPNature</nature>
+	</natures>
+</projectDescription>
