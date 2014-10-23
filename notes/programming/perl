@@ -1,0 +1,298 @@
+--- break
+
+keywords: perl,array,variable
+
+link: http://www.tutorialspoint.com/perl/perl_arrays.htm
+
+- array variable are preceded by an @ sign
+
+- refer to single element of array using $ with variable name follwed by
+  index of element
+
+examples:
+
+	my @array = (1,2, 'Hello);
+	my @array qw/This is an array/;
+	my @array = (1..10);
+
+- size determined using scalar context on array (@array)
+
+- max index determined by $#array
+
+--- break
+
+keywords: perl,array,reference,dereference,variable
+
+link: http://www.thegeekstuff.com/2010/06/perl-array-reference-examples/
+
+- reference is nothing but the location (address) of another variable
+
+examples:
+
+	my $array_ref = \@array; 	# reference already existing array
+	my $array_ref = [ 11,2,3,45 ];	# anonymous array reference
+
+	$array_ref = add_numbers(\@numbers);	# pass reference to sub
+
+- the reference variable can be dereferenced as shown in examples
+
+examples (dereference)
+
+	@{ $array_ref };	# take all elements of array
+	${ $array_ref }[0];	
+	@$array_ref;
+	$$array_ref;
+
+- if dereferencing a simple scalar variable oyu can omit the braces as shown
+  above
+
+- in perl ${VAR}[$y] can be written as VAR->[$y]
+
+example:
+
+	$$array_ref[2] => $array_ref->[2]
+
+--- break
+
+keywords: perl,hash,variable
+
+link: http://www.tutorialspoint.com/perl/perl_hashes.htm
+
+- a set of key/value pairs
+
+- hash variables are preceeded by a % sign
+
+- to refer to single element use hash variable number, preceeded by $ and
+  followed by the key associated with value in curly brackets
+
+examples:
+
+	%data = ('John Paul', 45, 'Lisa', 38);	
+	%data{'John Paul'} = 45;
+	%data{'Lisa'} = 38
+	%data = ('John Paul' => 45, 'Lisa' => 38);
+	
+	print "$data{'John Paul'}\n";
+
+--- break
+
+keywords: perl,hash,keys,values
+
+link: http://www.tutorialspoint.com/perl/perl_hashes.htm
+
+- get list of keys from a hash using keys function (keys %HASH)
+
+- get values funtions to get a list of all values (values %HASH)
+
+examples:
+	
+	@names = keys %data;
+	@values = values %data;
+
+- size (number of elements) is determined using scalar context on either
+  keys or values
+
+--- break
+
+keywords: hash,variable,add,remove,elements
+
+link: http://www.tutorialspoint.com/perl/perl_hashes.htm
+
+- adding element is simply done using assignment operator
+
+- removing element requires use of delete function
+
+examples:
+
+	$data{'Ali'} = 55;	# add new element
+	delete $data{'Ali'};	# remove element
+
+--- break
+
+keywords: hash,variable,reference,dereference
+
+link: http://www.thegeekstuff.com/2010/06/perl-hash-reference/
+
+- similar to array, hash can also be referenced by \ character in front of hash
+
+example:
+
+	$hash_ref = \%author;
+	my $hash_ref = { 'name' => 'Hasha' };	# anonymous hash ref	
+
+- the reference variable can be dereferenced as shown in examples: 
+	
+  	$name = ${ $hash_ref } { name };
+	
+example:
+
+	$ { $hash_ref } { 'designation' };
+	$hash_ref->{'designation'};		# short form
+	my @keys = keys % { $hash_ref };	# access all keys
+	my @keys = keys %$hash_ref;		# access all keys
+
+--- break
+
+keywords: hash,variable,existence
+
+link: http://www.tutorialspoint.com/perl/perl_hashes.htm
+
+- if you access key that doesn't exist, you will normally get undefined
+  (with warnings on you get a run time warning msg)
+
+- use exists function which returns true if named key exists
+
+example:
+
+	%data = ('John Paul' => 45, 'Lisa' => 30, 'Kumar' => 40);
+	if ( exists($data{'Lisa'} ) ) {
+		...
+	} else {
+		...
+	}
+
+--- break
+
+keywords: if,statement,conditional
+
+link: http://www.tutorialspoint.com/perl/perl_conditions.htm
+
+- the number 0, the strings '0' and "", the empty list () and undef are all
+  false in a boolean context and all other values are true
+
+- negation of a true value by ! or not returns a special false value
+
+- the following conditional statements exist
+
+syntax:
+
+	if (boolean_expression) {
+		# statemnts executed if true
+	}
+
+	if (boolean_expression) {
+		..
+	} else {
+		..
+	}
+
+	if (boolean_expression) {
+		..
+	} elsif (boolean_expression_2) {
+		..
+	} else {
+		..
+	}
+
+	unless (boolean_expression) {
+		# statements executed if false
+	}
+
+	unless (boolean_expression) {
+		# statements executed if false
+	} elsif (boolean_expression_2) {
+		# executed when true
+	} else {
+		# default
+	}
+
+	use Switch;
+	switch (argument) {
+		case 1		{ print "number 1" }
+		case "a"	{ print "string a" }
+		case [1..10,42	{ print "number in list" }
+		else		{ print "prevoius case not true" }
+	}
+
+** use of next in switch case block control is immediately transfered to
+   statement after the case statement (next case) rather that out of the
+   surrounding switch block **
+
+- conditional operator ? can be use to replace if else statements
+
+sytanx:
+
+	exp1 ? exp2 : exp3;
+
+- if exp1 is true, exp2 is evaluated else exp3 is
+
+--- break
+
+keywords: subroutine,function,method
+
+link: http://www.tutorialspoint.com/perl/perl_subroutines.htm
+
+- group of statements that together perform a task
+
+- pass arguments and acess using special array @_ (first argument is $_[0] and
+  so forth)
+
+- passing more than one array or hash normally causes them to lose their
+  separate identities so use references instead
+
+syntax:
+
+	sub subrouting_name {
+		body of subroutine
+	}
+
+	subroutine_name( list of arguments );
+
+example:
+
+	sub Hello {
+		print "Hello, World!\n";
+	}
+
+	Hello();
+
+	sub Average {
+		# get total number of args
+		$n = scalar(@_);
+		$sum = 0;
+
+		foreach $item (@_) {
+			$sum += $item;
+		}
+		$average = $sum / $n;
+
+		print "Average for given numbers: $average\n";
+	}
+	Average(10, 20, 30);
+
+- can return value, if you do not the last calculation performed is return value
+
+- if returning multiple array or hash use a reference
+
+- my operator confines a variable to a particular region of code (scope)
+
+- lexical scope is usually a block of code with a set of braces around it
+
+- local operator is used when current value of a variable must be visible to
+  called subroutines 
+
+- state operator is another type of lexical variable, similar to private but
+  they keep their value between subroutine calls (static variables)
+
+example:
+
+	use feature 'state';
+
+	sub  PrintCount {
+		state $count = 0;	# initial value
+
+		print "Value of counter is $count\n";
+		$count++;
+	}
+
+	for (1..5) { PrintCount(); }
+
+	** will print 0 - 4 **
+
+- context of a subroutine or statement is defined as the type of return value
+  that is expected
+
+example:
+
+	my $datestring = localtime( time );		# scalar context
+	($sec,$min,$hour,$mday,$mon) = localtime(time);	# list context
