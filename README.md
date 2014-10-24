@@ -1,4 +1,4 @@
-stuff
-=====
+code
+====
 
-Random stuff (documentation, notes, etc)
+A collection of source code from various programming languages (PHP, Perl, Bash, etc)

@@ -1,0 +1,277 @@
+<html>
+<style type="text/css"><!--
+  body,td,div,p,a,font,span {font-family: arial,sans-serif;}
+  body {margin-top:2}.c {width:4; height: 4} 
+  body { bgcolor:"#ffffff" } 
+  A:link {color:#0000cc; } 
+  A:visited { color:#551a8b; }
+  A:active { color:#ff0000; }
+  .form-noindent {background-color: #ffffff; border: #C3D9FF 1px solid}
+--></style>
+<style type="text/css"><!--
+.gaia.le.lbl { font-family: Arial, Helvetica, sans-serif; font-size: smaller; }
+.gaia.le.fpwd { font-family: Arial, Helvetica, sans-serif; font-size: 70%; }
+.gaia.le.chusr { font-family: Arial, Helvetica, sans-serif; font-size: 70%; }
+.gaia.le.val { font-family: Arial, Helvetica, sans-serif; font-size: smaller; }
+.gaia.le.button { font-family: Arial, Helvetica, sans-serif; font-size: smaller; }
+.gaia.le.rem { font-family: Arial, Helvetica, sans-serif; font-size: smaller; }
+
+.gaia.captchahtml.desc { font-family: arial, sans-serif; font-size: smaller; } 
+.gaia.captchahtml.cmt { font-family: arial, sans-serif; font-size: smaller; font-style: italic; }
+  
+--></style>
+  <head>
+  <title>Perseus Single Sign On (Beta)</title>
+  <style type="text/css"><!--
+    .body { margin-left: 3em;
+            margin-right: 5em;
+            font-family: arial,sans-serif; }
+
+    div.errorbox-good {}
+
+    div.errorbox-bad {} 
+
+    div.errormsg { color: red; font-size: smaller; font-family: arial,sans-serif;}
+    font.errormsg { color: red; font-size: smaller; font-family: arial,sans-serif;}
+
+    
+    
+    hr {
+      border: 0;
+      background-color:#DDDDDD;
+      height: 1px;
+      width: 100%;
+      text-align: left;
+      margin: 5px;
+    }
+    
+
+    
+    
+  --></style>
+</head>
+
+<body dir="ltr" onLoad="gaia_setFocus();">
+	<div id="main">
+  		<table width="100%" border="0" cellpadding="2" cellspacing="0">
+  			<tr>
+				<td colspan="2"><img width="1" height="2" alt=""/></td>
+  			</tr>
+  			<tr>
+  				<td valign="top" width="1%">&nbsp;</td>
+  				<td valign="top">
+  					<table width="100%" border="0" cellpadding="0" cellspacing="0">
+  						<tr>
+  							<td colspan="2"><img width="1" height="15" alt=""/></td>
+  						</tr>
+  						<tr bgcolor="#3366cc">
+							<td><img height="1" width="1" alt=""/></td>
+						</tr>
+						<tr bgcolor="#e5ecf9">
+							<td style="padding-left: 4px; padding-bottom:3px; padding-top:2px; font-family:arial,sans-serif;">
+								<b>Welcome to Perseus (Beta)</b>
+							</td>
+						</tr>
+						<tr>
+							<td colspan="2"><img width="1" height="5" alt=""/></td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</table>
+		<br>
+		<table border="0" width="90%" align="center" cellpadding=5 cellspacing=1>
+			<tr>
+				<td width="75%" valign="top">
+					<div style="font-size:83%;">
+						<p>
+						For Authorized Use Only
+						</p>
+						<ul>
+							<li>
+								Activities on this system are subject to being monitored or recorded for all users, authorized or unauthorized
+							</li>
+							<li style="padding-top: 15px;">
+								Use of the system is considered constent to such monitoring
+							</li>
+							<li style="padding-top: 15px;">
+								Any evidence of possible criminal activity may be provided to law enforcement
+							</li>
+						</ul>	
+					</div>
+				</td>
+				<td style="padding-left: 10px;" valign="top" align="center">
+					<script><!--
+						function gaia_onLoginSubmit() {
+							if (window.gaiacb_onLoginSubmit) {
+								return gaiacb_onLoginSubmit();
+							} else {
+								return true;
+							}
+						}
+
+						function gaia_setFocus() {
+							var f = null;
+							if (document.getElementById) { 
+								f = document.getElementById("gaia_loginform");
+							} else if (window.gaia_loginform) { 
+								f = window.gaia_loginform;
+							}
+							if (f) {
+								if (f.Email && (f.Email.value == null || f.Email.value == "")) {
+									f.Email.focus();
+								} else if (f.Passwd) {
+									f.Passwd.focus();
+								}
+							}
+						}
+					--></script>
+					<style type="text/css"><!--
+  						div.errormsg { color: red; font-size: smaller; font-family:arial,sans-serif; }
+  						font.errormsg { color: red; font-size: smaller; font-family:arial,sans-serif; }  
+					--></style>
+					<style type="text/css"><!--
+						.gaia.le.lbl { font-family: Arial, Helvetica, sans-serif; font-size: smaller; }
+						.gaia.le.fpwd { font-family: Arial, Helvetica, sans-serif; font-size: 70%; }
+						.gaia.le.chusr { font-family: Arial, Helvetica, sans-serif; font-size: 70%; }
+						.gaia.le.val { font-family: Arial, Helvetica, sans-serif; font-size: smaller; }
+						.gaia.le.button { font-family: Arial, Helvetica, sans-serif; font-size: smaller; }
+						.gaia.le.rem { font-family: Arial, Helvetica, sans-serif; font-size: smaller; }
+
+						.gaia.captchahtml.desc { font-family: arial, sans-serif; font-size: smaller; } 
+						.gaia.captchahtml.cmt { font-family: arial, sans-serif; font-size: smaller; font-style: italic; }
+					--></style>
+					<form id="gaia_loginform" action="p_broker.php" method="post" onsubmit="return(gaia_onLoginSubmit());">
+						<div id="gaia_loginbox">
+							<table class="form-noindent" cellspacing="3" cellpadding="5" width="100%" border="0">
+  								<tr>
+  									<td valign="top" style="text-align:center" nowrap="nowrap" bgcolor="#e8eefa">
+										<div class="loginBox">
+  											<table id="gaia_table" align="center" border="0" cellpadding="1" cellspacing="0">
+												<tr>
+													<td colspan="2" align="center">
+														<font size="+0">Sign in</font>  														
+  													</td>
+  												</tr>
+  												<script type="text/javascript"><!--
+  													function onPreCreateAccount() {
+  														return true;
+  													}
+  													
+  													function onPreLogin() {
+  														if (window["onlogin"] != null) {
+  															return onlogin();
+  														} else {
+  															return true;
+  														}
+  													}
+  												--></script>
+												<tr>
+  													<td colspan="2" align="center"></td>
+												</tr>
+												<tr>
+  													<td nowrap="nowrap">
+  														<div align="right">
+  															<span class="gaia le lbl">
+  																Username:
+  															</span>
+  														</div>
+  													</td>
+  													<td>
+  														<input type="hidden" name="a_name" id="a_name" value="test_app" />  														
+  														<input type="text" name="u_name"  id="u_name" size="18" value="" class='gaia le val' />
+  													</td>
+  												</tr>
+  												<tr>
+  													<td></td>
+  													<td align="left"></td>
+  												</tr>
+  												<tr>
+  													<td align="right">
+  														<span class="gaia le lbl">
+  															Password:
+  														</span>
+  													</td>
+  													<td>
+  														<input type="password" name="p_word" id="p_word" size="18" class="gaia le val" />
+  													</td>
+  												</tr>
+  												<tr>
+  													<td></td>
+  													<td align="left"></td>
+  												</tr>
+  												<tr>
+  													<td align="right" valign="top">
+  														<input type="checkbox" name="PersistentCookie" id="PersistentCookie" value="yes" checked='checked' />
+  														<input type="hidden" name='rmShown' value="1" />
+  													</td>
+  													<td>
+  														<span class="gaia le rem">
+  															Remember me on this computer.
+  														</span>
+  													</td>
+  												</tr>
+  												<tr>
+  													<td></td>
+  													<td align="left">
+  														<input type="submit" class="gaia le button" name="signIn" value="Sign in" />
+  													</td>
+  												</tr>
+  												<tr id="ga-fprow">
+  													<td colspan="2" height="33.0" class="gaia le fpwd" align="center" valign="bottom">
+  														<a href="" target=_top>
+  															I cannot access my account
+  														</a>
+  													</td>
+												</tr>
+											</table>
+										</div>
+									</td>
+								</tr>
+							</table>
+						</div>
+					</form>
+					<form id="gaia_universallogin" action="https://www.google.com/accounts/ServiceLoginAuth?service=finance" method="post" onsubmit="return(gaia_onLoginSubmit());">
+						<input type="hidden" name="continue" id="continue" value="http://finance.google.com/finance" />
+						<input type="hidden" name="service" id="service" value="finance" />
+						<input type="hidden" name="nui" id="nui" value="1" />
+						<input type="hidden" name="hl" id="hl" value="en" />
+					</form>
+					<br/>
+					<table class="form-noindent" border="0" cellpadding="6" cellspacing="3" width="100%">
+						<tr>
+							<td bgcolor="#e8eefa" align="center" style="font-size:83%">
+								<b>Don't have a Perseus Account?</b><br/>
+								<a href='' >
+									<b>Create an account now</b>
+								</a>
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</table>
+		<br/><br/>
+		<style type="text/css"><!--
+			.footer { padding-right: 5px; 
+          			padding-left: 5px; 
+          			padding-bottom: 5px; 
+          			padding-top: 5px; 
+          			font-size: 83%;
+          			border-top: #ffffff 1px solid; 
+          			border-bottom: #ffffff 1px solid; 
+          			background: #e5ecf9; 
+          			text-align: center;
+          			font-family: arial,sans-serif;
+          			}
+          --></style>
+          <div class="footer" align="center">
+          	<font color="#666666">&copy;2008 Perseus</font> -
+          	<a href='http://www/'>Perseus Home</a> -
+          	<a href='http://www/about.html'>About Perseus</a> -
+          	<a href='http://www/privacy.html'>Privacy Policy</a> -
+          	<a href='http://www/terms_of_service.html'>Terms of Service</a>
+          </div>
+         </div>
+        </body>
+</html>

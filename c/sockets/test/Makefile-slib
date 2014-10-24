@@ -1,0 +1,28 @@
+all : server_test client_test
+
+server_test : server_test.o socket.o server_socket.o
+	g++ -o -L. server_test server_test.o -lsocket 
+
+client_test : client_test.o socket.o client_socket.o
+	g++ -o -L. client_test client_test.o -lsocket
+
+server_test.o : server_test.cpp
+	g++ -c -L. -D__DEBUG server_test.cpp
+
+client_test.o : client_test.cpp
+	g++ -c -L. -D__DEBUG client_test.cpp
+
+socket.o : socket.cpp socket.h
+	g++ -c -L. -D__DEBUG -fPIC socket.cpp
+
+server_socket.o : server_socket.cpp server_socket.h
+	g++ -c -L. -D__DEBUG -fPIC server_socket.cpp
+
+client_socket.o : client_socket.cpp client_socket.h
+	g++ -c -L. -D__DEBUG -fPIC client_socket.cpp
+
+lib : socket.o server_socket.o client_socket.o
+	g++ -shared -W1,-soname,libsocket.so.1 -o libsocket.so.1.0 socket.o server_socket.o client_socket.o
+
+clean :
+	rm -rf *.o server_test client_test
