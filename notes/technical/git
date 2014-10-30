@@ -1,0 +1,217 @@
+--- break
+
+keywords: git,introduction
+
+link: http://www.vogella.com/tutorials/Git/article.html#git 
+
+- version control system allows you to track the history of a collection of files
+
+- allows you to revert the collection of files to another version
+
+- collection of files and their complete history are stored in a repository
+
+- distributed version control system does not necessarily have a central server which
+  stores the data
+
+- copying process is typically called cloning in distributed version control system
+
+- each cloned repository is a full copy of the repository (full history of the
+  collection of files and same functionality as the original repository)
+
+- user performs version control operations against their local (cloned) repository
+
+- repository can be configured to be in one of two states
+
+	bare: are used on servers to share changes coming from different developers
+
+	non-bare: allow you to create new changes through modification of files
+	and to create new versions in the repository
+
+- git allows user to sync local repo with other (remote) repositories (push, fetc and
+  pull changes from other/remote repositories)
+
+--- break
+
+keywords: git,branch,merge
+
+link: http://www.vogella.com/tutorials/Git/article.html#gitdefintion_branching
+
+- supports branching (work on different version fo your collection of files)
+
+- branch seperates these versions and allows user to switch between them
+
+- local to the repository (does not have to have counterpart in remote repository)
+
+- local branches can be compared with other local branches and with remote tracking
+  branches (proxies state of a branch in another remote repository) 
+
+- changes from different branches can be combined (merged)
+
+--- break
+
+keywords: committing,objects,commit
+
+- commits create a new commit object in the repository
+
+- commit object is addressable via a SHA-1 checksum (40 bytes long secure hash of the
+  content of the files, directories and complete hsitory up to the new commit, the
+  committer and several other factors)
+
+- checksum ensures that files cannot be manipulated in repository
+
+- commit object points to individual files via a tree object
+
+- files stored in repository as blob objects (might be packed for better performance
+  and compact storage)
+
+- blocks are addressed via their SHA-1 hash
+
+--- break
+
+keywords: file,states
+
+link: http://www.vogella.com/tutorials/Git/article.html#gitterminology_filelifecycle
+
+- file in working tree can have following states
+
+	untracked: not tracked by repository (neither staged or committed)
+
+	tracked: committed and not staged
+
+	staged: staged to be included in next commit
+
+	dirty/modified: file has changed but change is not staged
+
+--- break
+
+keywords: global,configuration,config
+
+link: http://www.vogella.com/tutorials/Git/article.html#setup_configuration
+
+- store global settings in .gitconfig located in user home directory
+
+- configuration for committer and author
+
+- configuration is glocal when --global flag is specified, otherwise config setting
+  is specific to current repository
+
+- system wide configuration can be set in /etc/gitconfig, use --system flag (must
+  have sufficient rights)
+
+example:
+
+	git config --global user.name "Example Name" 	# user which will be used
+
+	git config --global user.email "user@gmail.com"	# email which will be used
+
+	git config --global push.default simple 	# push only current branch
+
+	git config --global push.default matching	# put all matching branches
+
+	git config --global color.ui true		# enable color highlighting
+	git config --global color.status auto
+	git config --global color.branch auto
+
+	git config --list				# list local repo settings
+
+	git config --global --list			# global settings
+
+-- break 
+
+keywords: gitignore,ignore
+
+link: http://www.vogella.com/tutorials/Git/article.html#d285772e1007
+
+- can be configured to ignore certain files and directories
+
+- configured in a .gitignore file, can be in any directory and can contain patterns
+  for files
+
+example:
+
+	# ignore all bin directories
+	bin/
+
+	# ignore all target directories
+	target/
+
+	# ignore all files ending with ~
+	*~
+
+- use --force parameter to git add to add ignored files to staging area
+
+- create global .gitignore for cross repository exclusion using global config option
+  core.excludesfile
+
+- can also create local per-repo rules by editting .git/info/exclude (file not
+  committed with repository)
+
+--- break
+
+keywords: empty,directory,.gitkeep
+
+link: http://www.vogella.com/tutorials/Git/article.html#ignorekeep_gitkeep
+
+- git ignores empty directory (does not put under version control)
+
+- to track common practice is to put a file called .gitkeep in directory (file can
+  actually be called anything)
+
+--- break
+
+keywords: create,repository
+
+link: http://www.vogella.com/tutorials/Git/article.html#firstgit_repocreation 
+
+syntax:
+	
+	# initialize git repository in current directory
+	git init
+
+- all files inside repository folder excluding .git folder are the working tree	
+
+--- break
+
+keywords: repository,status
+
+link: http://www.vogella.com/tutorials/Git/article.html#firstgit_repostatus
+
+syntax:
+
+	git status
+
+- shows working tree status (which files have changed, staged and which are not
+  part of staging area)
+
+- also show merge conflicts
+
+--- break
+
+keywords: add,staging,stage,area
+
+link: http://www.vogella.com/tutorials/Git/article.html#firstgit_repoadd 
+
+- before commiting changes add files to the staging area
+
+syntax:
+
+	git add FILESPEC
+
+** if you change file before committing you must add again **
+
+--- break
+
+keywords: committ
+
+link: http://www.vogella.com/tutorials/Git/article.html#firstgit_repocommit
+
+- aftering staging files you commit them to the repository
+
+- creates a new commit object in repository and the HEAD reference points to the
+  new commit
+
+syntax:
+
+	git commit -m "Initial commit"
+
+- if you leave -m options out the default editor is started
