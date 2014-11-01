@@ -1,0 +1,99 @@
+--- break
+
+keywords: trustsec,security,group,tags,sgt
+
+link: http://www.cisco.com/c/dam/en/us/td/docs/solutions/Enterprise/Security/TrustSec_2-0/trustsec_2-0_dig.pdf,page 141 
+
+- provide security group-based access control using security group-based tags (SGTs)
+
+- tag user traffic with role information
+
+- identity information may be carried throughout network and used by devices deeper in
+  network for policy control
+
+- SGTs allow enterprises to build simple role-based access policies that are topology
+  independent and provide operational flexibility compared to VLANs and dACLs
+
+- SGA (Security Group Access) builds a trusted network infrastructure
+
+- devices authenticate each other (Network Device Admission Control/NDAC)
+
+- NDAC uses EAP-FAST to authenticate switches to Cisco ISE so they can obtain SGT and
+  other identity information
+
+- also secures network by providing encryption at Layer 2 via MACsec (802.1 AE)
+
+- traffic is encrypted from switch to switch (packets encrypted on egress for 
+  transmission then decrypted on ingress where they can be inspected within switch)
+
+--- break
+
+keywords: trustsec,ndac,network,device,admission
+
+link: http://www.cisco.com/c/dam/en/us/td/docs/solutions/Enterprise/Security/TrustSec_2-0/trustsec_2-0_dig.pdf,page 144
+
+- requires a device to behave as an 802.1x supplication to gain access to Cisco
+  TrustSec network
+
+- after admission, device is able to act as an authenticator, in turn admitting other
+  supplications devices 
+
+- one device (Seed Device) needs to be configured with knowledge of at least one
+  Cisco ISE
+
+- subsequent devices are called Non-Seed Device, are authenticated by its peer devices
+  already within the domain
+
+- peers act as intermediaries for the domain authentication server
+
+- each newly authenticated device is categorized by the authentication server and
+  assigned a security group n umber based on its identity, role and security purpose
+
+- as part of policy aquisition phase (authorization), a Cisco TrustSec capable device
+  receives an SGT called a Device SGT
+
+- Device SGT represent security group to which device belongs and is exchanged with
+  neighbor device as a token of trusted devices
+
+- Device SGT is configured on ISE prior to the seed device NDAC process
+
+procedure:
+
+Configure Device SGT and create a policy that tags devices as they get added to ISE:
+
+	1) Policy -> Policy Elements -> Results -> Security Group Access -> Security
+	   Groups
+
+	2) Add and Submit when complete
+
+	3) Policy -> Security Group Access -> Network Device Authorization
+
+	4) Click Actions and insert a new row
+
+	5) Create an NDAC Policy
+
+Define AAA Client
+
+	1) Administration -> Network Resources -> Network Devices
+
+	2) Add
+
+	3) Fill out radius settings
+
+	4) Enable SGA and complete settings
+
+Configure Private Server List
+
+	1) Administration -> Network Resources -> SGA AAA Servers
+
+	2) Ensure the SGA AAA server is present
+
+Modify the Authority-ID Description (useful when troubleshooting PAC related problems)
+
+	1) Administration -> Settings -> Protocols -> EAP-FAST -> EAP-FAST Settings
+
+	2) Change "Authority Identity info Description to a unique identifier
+
+Configure Switch
+
+	1) Enter configuration mode and enable 802.1X and SGA features

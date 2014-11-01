@@ -215,3 +215,238 @@ syntax:
 	git commit -m "Initial commit"
 
 - if you leave -m options out the default editor is started
+
+--- break
+
+keywords: log,history
+
+link: http://www.vogella.com/tutorials/Git/article.html#firstgitresult
+
+- show git log
+
+syntax:
+
+	git log
+
+--- break:
+
+keywords: remove,file
+
+link: http://www.vogella.com/tutorials/Git/article.html#firstgit_deletefile
+
+- to delete files from your working tree and record deletion of file in staging area
+
+syntax:
+
+	method 1:
+
+	git rm FILESPEC
+
+	method 2:
+	
+	rm FILE
+	git add -A .	# -A flag adds, modifies and removes files
+
+--- break:
+
+keywords: remove,file,staging,area
+
+link: http://www.vogella.com/tutorials/Git/article.html#firstgit_reset
+
+- remove a file from the staging area which was added through git add
+
+syntax:
+
+	git reset FILESPEC	# remove FILESPEC from staging area
+
+--- break:
+
+keywords: correct,amend,commit,message
+
+link: http://www.vogella.com/tutorials/Git/article.html#firstgit_amend
+
+- replace the last commit message (only for commits which have not been pushed to a
+  public branch or another repository)
+
+syntax:
+
+	git commit --amend -m "NEW COMMIT MESSAGE"
+
+- creates new commit ID and users may have based work on old commit ID, they will
+  need to migrate their work based on new commit
+
+--- break
+
+keywords: remove,file,.gitignore
+
+link: http://www.vogella.com/tutorials/Git/article.html#untrack
+
+- remove last version of file in repository, after updating .gitignore (git will stop
+  tracking from this point forward)
+
+syntax:
+
+	git rm [-r] --cached FILESPEC	# -r for directory (recursive)
+
+- does not remove it from the history, use git filter-branch for that
+
+--- break
+
+keywords: remote,repositories
+
+link: http://www.vogella.com/tutorials/Git/article.html#remotes
+
+- URLs in repository to other remote repositores hosted on internet, lcoally or in 
+  network
+
+- can be used to sync changes of serveral repositories
+
+- local repo can be connected to multiple remote repositories
+
+- when you clone repo, git implicitly creates a remote named origin by default which
+  links back to cloned repository
+
+- an init doesn't create orgin remote automatically
+
+--- break
+
+keywords: base,repository,repositories
+
+link: http://www.vogella.com/tutorials/Git/article.html#bareremotes_definition 
+
+- base repository: repository without a working tree
+
+syntax:
+
+	git init --bare		# create a bare repository
+
+--- break
+
+keywords: remote,repositories,repository,add
+
+link: http://www.vogella.com/tutorials/Git/article.html#remotes_remoteadd
+
+- you can add multiple remote repositories
+
+syntax:
+
+	git remote add NAME URL
+
+--- break
+
+keywords: remote,repositories,repository,sync
+
+link: http://www.vogella.com/tutorials/Git/article.html#remotes_remote_synchronize 
+
+syntax:
+
+	git push NAME
+
+example:
+
+	git push origin
+
+--- break
+
+keywords: remote,repositories,repository,show,list
+
+link: http://www.vogella.com/tutorials/Git/article.html#remotes_showremote 
+
+syntax:
+
+	git remote [-v]			# show details about remotes
+
+	git remote show NAME		# show details of remote called NAME
+
+--- break
+
+keywords: clone,repository,repositories,remote
+
+link: http://www.vogella.com/tutorials/Git/article.html#cloneremotes
+
+- clone repository and checkout a working tree 
+
+syntax:
+
+	git clone URL .
+
+--- break
+
+keywords: push,changes,remote
+
+link: http://www.vogella.com/tutorials/Git/article.html#cloneremotes_push
+
+- by default push sends data from your current branch to the same branch of the
+  remote repository
+
+syntax:
+
+	git push [REPOSITORY]
+
+example:
+
+	git push ../remote-repo.git	# push changes to remote-repo.git
+
+- by default you can only push to bare repositories and change much result in a
+  fast-forward merge
+
+--- break
+
+keywords: pull,changes,remote
+
+link: http://www.vogella.com/tutorials/Git/article.html#cloneremotes_pull
+
+- by default pull pulls in changes from repository working tree was cloned from
+
+syntax:
+
+	git pull [REPOSITORY]
+
+example:
+
+	git pull ../remote-repo.git	# pull changes from remote-repo.git
+
+- the pull command is actually a shortcut for git fetch followed by the git merge
+  command (or git rebase depending on configuration)
+
+--- break
+
+keywords: online,remote,repository,repositories
+
+link: http://www.vogella.com/tutorials/Git/article.html#remote
+
+- Git supports several transport protocols to connect to other repositories
+
+- native protocol is called git (port 9148)
+
+- also supports SSH, HTTP and HTTPS
+
+syntax:
+
+	git clone git://URL
+
+	git clone ssh://USER@URL
+
+	git clone http://URL
+
+	git clone https://URL
+
+--- break
+
+keywords: remote,repository,repositories,proxy,configuration
+
+link: http://www.vogella.com/tutorials/Git/article.html#remote_proxy
+
+- will use standard http_proxy and/or https_proxy environment variables
+
+- configure git settings to specify proxy settings as well
+
+syntax:
+
+	git config --global http.proxy http://proxy:8080
+
+	git config --get http.proxy		# check proxy setting
+
+	git config --global --unset http.proxy	# remove proxy setting
+
+
