@@ -449,4 +449,129 @@ syntax:
 
 	git config --global --unset http.proxy	# remove proxy setting
 
+--- break
 
+keywords: branch
+
+link: http://www.vogella.com/tutorials/Git/article.html#gitbranch_def
+
+- named pointers to commits
+
+- use different branches independently from each other
+
+- default branch is often called master
+
+- branch pointer is 41 bytes large (40 bytes of characters and an additional new
+  line character
+
+- creating of branches if very fast and cheap in terms of resource consumption
+
+- to work on branch you checkout the branch (working tree is the commit to which
+  branch points)
+
+--- break
+
+keywords: branch,list
+
+link: http://www.vogella.com/tutorials/Git/article.html#gitbranch_listbranches
+
+- you can list all local branches or remote remote branches
+
+- currently active branch is marked with a *
+
+syntax:
+
+	git branch [-v]		# local branches
+
+	git branch -a [-v]	# local + remote branches
+
+	git ls-remote NAME	# list branches and tags in remote repo NAME
+
+--- break
+
+keywords: branch,create
+
+link: http://www.vogella.com/tutorials/Git/article.html#gitbranch_createnewbranch
+
+- you can create branch from any starting point (commit id, tag, remote or local
+  branch)
+
+- HEAD reference point is the default starting point
+
+syntax:
+
+	git branch NAME [HASH]		# create branch NAME
+
+--- break
+
+keywords: branch,checkout
+
+link: http://www.vogella.com/tutorials/Git/article.html#gitbranch_checkout
+
+- to work on branch you have to checkout the branch (HEAD pointer moves to last
+  commit in branch)
+
+syntax:
+
+	git checkout NAME		# checkout/switch to branch NAME
+
+	git checkout -b NAME		# create branch NAME and switch to it
+
+example:
+
+	# creates a new branch based on master branch without last commit
+	git checkout -b mybranch master~1 
+
+--- break
+
+keywords: branch,rename
+
+link: http://www.vogella.com/tutorials/Git/article.html#git_rename_branch
+
+syntax:
+
+	git branch -m OLD_NAME NEW_NAME
+
+--- break
+
+keywords: branch,delete
+
+link: http://www.vogella.com/tutorials/Git/article.html#gitdeletebrach
+
+syntax:
+
+	git branch -d NAME	
+
+	git branch -D NAME		# force delete
+
+--- break
+
+keywords: push,branch,remote,repository
+
+link: http://www.vogella.com/tutorials/Git/article.html#gitpushbranch
+
+- push changes in current active branch to remote repository by specifying target
+  branch (creates target branch if it doesn't exist)
+
+syntax:
+
+	git push origin NAME
+
+--- break
+
+keywords: branch,difference
+
+link: http://www.vogella.com/tutorials/Git/article.html#gitdiffbranches
+
+- you can view the difference between two branches
+
+syntax:
+
+	git diff BRANCH_1 BRANCH_2
+
+- can also use commit ranges
+
+syntax:
+
+	# show changes in BRANCH_1 and BRANCH_2 since they diverged
+	git diff BRANCH_1...BRANCH_2
