@@ -200,7 +200,7 @@ syntax:
 	switch (argument) {
 		case 1		{ print "number 1" }
 		case "a"	{ print "string a" }
-		case [1..10,42	{ print "number in list" }
+		case [1..10,42]	{ print "number in list" }
 		else		{ print "prevoius case not true" }
 	}
 
@@ -296,3 +296,52 @@ example:
 
 	my $datestring = localtime( time );		# scalar context
 	($sec,$min,$hour,$mday,$mon) = localtime(time);	# list context
+
+--- break
+
+keywords: subroutine,function,method,reference
+
+link: http://www.tutorialspoint.com/perl/perl_references.htm
+
+- might be useful if you need to create a signal handler
+
+example:
+
+	sub PrintHash {
+		...
+		...
+	} 
+
+	# create a reference to above function
+	$cref = \&PrintHash;
+
+	# function call using reference
+	&$cref(...);
+	
+--- break
+
+keywords: command,line,options,getopts,standard
+
+link: http://www.vromans.org/johan/articles/getopt.html
+
+- Getopt:Std provides two subroutines, getopt and getopts
+
+- both use a single dash to identify option letters and stop processing options when
+  first non-option is detected
+
+- getopt takes one mandatory argument, string contains the option letters
+
+- getopts allows you to pass string argument and specify whether an option takes a 
+  value by preceeding it with a colon
+
+- getopt(s) will set global variables $opt_? or you can pass hash as second argument 
+  that will have a key for each optoin letter and the corresponding value
+
+example:
+
+	use Getopt::Std;
+
+	getopts('oif:');		# -o and -i are boolean flags, -f takes argument
+	getopts('oif:', \%opts); 	# options as above, values stored in %opts
+	
+--- break
