@@ -1,0 +1,20 @@
+--- break
+
+keywords: linux,rescan,scsi
+
+link: https://blogs.it.ox.ac.uk/oxcloud/2013/03/25/rescanning-your-scsi-bus-to-see-new-storage/
+
+- adding a new disk, find out host controller
+
+	grep mpt /sys/class/scsi_host/host?/proc_name
+
+- rescan the bus (all controllers, channels and luns)
+
+	echo "- - -" > /sys/class/scsi_host/host0/scan
+
+- when expanding the disc
+
+	echo 1 > /sys/class/scsi_device/[DEVICE-ID]/device/rescan
+
+--- break
+
