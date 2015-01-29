@@ -1,0 +1,219 @@
+--- break
+
+keywords: tcp,data,handling,processing,streams,segments,sequence,numbers
+
+link: http://www.tcpipguide.com/free/t_TCPDataHandlingandProcessingStreamsSegmentsandSequ.htm
+
+- uppper layers in OSI are usually oriented around the use of messages
+
+- passed from higher layers to lower ones and encapsulated in lower layers headers
+
+- then passed further down until they are actually sent out the physical layer
+
+- UDP is an example
+
+- messages are inherently limiting because it forces applications to create
+  discrete blocks of data (force apps to divide data up, keep track of it, etc)
+
+- TCP designed to accept application data of any size and structure
+
+- more specifically TCP is said to trate data coming from an application as a
+  stream (TCP is stream-oriented)
+
+--- break
+
+keywords: tcp,data,packaging,segments,streams
+
+link: http://www.tcpipguide.com/free/t_TCPDataHandlingandProcessingStreamsSegmentsandSequ-2.htm
+
+- TCP must take stream of bytes and send them using a network-layer protocol (IP)
+  which is message oriented
+
+- TCP takes stream from application and divides it into discreet messages for IP
+  (called TCP segments)
+
+- TCP segments are treated by IP like all other discrete messages for transmission
+  (placed into IP datagrams and transmitted)
+
+- recipient unpackages the segments and passes them to TCP which converts them
+  back to a byte stream and send to the application.
+
+- TCP layer accumulates data it receives and on regular intervals forms segments
+  to be transmitted using IP
+
+- size of segment controlled by two primary factors
+
+	maximum segment size (MSS) : determined during connection establishment,
+				     and chosen to prevent unnecessary
+				     fragmentation at IP layer
+
+	window size: if lower than MSS this value is used
+
+--- break
+
+keywords: tcp,data,identification,sequence,numbers
+
+link: http://www.tcpipguide.com/free/t_TCPDataHandlingandProcessingStreamsSegmentsandSequ-3.htm
+
+- TCP is reliable so it needs to keep track of all data it receives from an
+  application so it can make sure it is all received by the destination
+
+- must make sure the data is received in the order it was sent and must retransmit
+  any lost data
+
+- since TCP is stream oriented, identification must be done for each byte of data
+
+- each byte of data is assigned a sequence number which is used to keep track of
+  it through the process of transmission, reception and acknowledgement (in 
+  practice blocks of many bytes are managed by using the sequence numbers of 
+  bytes at the start and end of the block)
+
+- sequence numbers are used to ensure the data sent in segments is reassembled
+  into the original stream
+
+- required to implement the sliding window that enables TCP to provide reliability
+  and data flow control
+
+--- break
+
+keywords: tcp,sliding,window,data,transport,reliability,flow,control
+
+link: http://www.tcpipguide.com/free/t_TCPSlidingWindowAcknowledgmentSystemForDataTranspo.htm
+
+- reliability: ensuring that data that is sent actually arrives at its destination
+  and if not, detecting this and re-sending the data
+
+- data flow control: managing the rate at which data is sent so that it does not
+  overwhelm the device that is receiving it
+
+- to accomplish these tasks, sliding window acknowlegement system is used
+
+- how sliding window works is critical to understanding just about everything
+  else in TCP
+
+--- break
+
+keywords: tcp,stream,oriented,sliding,window,acknowledgement,system
+
+link: http://www.tcpipguide.com/free/t_TCPSlidingWindowAcknowledgmentSystemForDataTranspo-5.htm
+
+- TCP divides bytes into segments, all bytes in segment are sent together and
+  received together and thus acknowledged together
+
+- acknowledge data using the sequence number of the last byte of data in the
+  segment
+
+- bytes that the sending TCP has in its buffer can be placed into four categories
+
+	- bytes sent and acknowledged
+	- bytes sent but not yet acknowledged
+	- bytes not yet sent for which recipient is ready
+	- bytes not yet sent for which recipient is not ready
+
+- receiving device uses a similar system to differentiate between data received
+  and acknowledged
+
+--- break
+
+keywords: sequence,number,assignment,synchronization
+
+link: http://www.tcpipguide.com/free/t_TCPSlidingWindowAcknowledgmentSystemForDataTranspo-6.htm
+
+- sender and receiver agree on sequence numbers to assign to the bytes in the
+  stream (done during connection estabishment)
+
+- key to operation of entire process is the number of bytes the recipient is
+  allowing transmitter to have unacknowleged at one time (send window)
+
+- usable window is defined as the amount of data the transmitter is still
+  allowed to send given amount of data that is outstanding
+
+--- break
+
+keywords: processing,acknowledgements,sliding,send,window
+
+link: http://www.tcpipguide.com/free/t_TCPSlidingWindowAcknowledgmentSystemForDataTranspo-8.htm
+
+- TCP is a cumulative acknowledgment system, which can only use a single number
+  to acknowledge data, the number of the last contiguous byte in the stream
+  successfully received
+
+- sending device receives acknowlegement and it will be able to transfer some of
+  the bytes to category 1 (from above)
+
+- sender will now have more room in category 3
+
+- thus the window slides
+
+--- break
+
+keywords: tcp,non-contiguous,acknowledgement,handling,selective,sack
+
+link: http://www.tcpipguide.com/free/t_TCPNonContiguousAcknowledgmentHandlingandSelective.htm 
+
+- weakness of TCP acknowledgment system is the inability to effectively deal with 
+  the receipt of non-contigous TCP segments
+
+- acknowledgement number specifies all sequence numbers lower than its value have
+  been received by the device sending the number
+
+- this can lead to a potentially serious performance problem, especially on
+  networks that operate at high speed or over unreliable physical networks
+
+- segments after losts segment will never get acknowledged and sliding window
+  will get "stuck"
+
+---  break
+
+keywords: tcp,retransmission,unacknowledged,segments
+
+link: http://www.tcpipguide.com/free/t_TCPNonContiguousAcknowledgmentHandlingandSelective-2.htm
+
+- two different possible ways to handle retransmission when there are subsequent
+  segments outstanding beyond the lost segment
+
+	- retransmit only timed-out segments: conservative or optimistic approach
+
+	- retransmit all outstanding segments: aggressive or pessimistic method
+
+- TCP doesn't know whether these other segments showed up, it cannot know which
+  method is better, it simply makes an "executive decision" on which method to use
+
+-- break
+
+keywords: tcp,selective,acknowledgment,sack
+
+link: http://www.tcpipguide.com/free/t_TCPNonContiguousAcknowledgmentHandlingandSelective-4.htm 
+
+- solution to non-contiguous segments is to extend the basic TCP sliding window
+  algorithm with an optional feature that allows a device to ack non-contiguous
+  segments individually
+
+- RFC 1702 defined in RFC 2018, TCP selective acknowledgement (SACK)
+
+- to use SACK, the two devices must both support feature and enable it by
+  negotiating the Selective Acknowledge Permitted (SACK-Permitted) option in the
+  SYN segment they use to establish connectoin
+
+- if done each device can include in a regular TCP segment a SACK option
+
+- SACK option contains a list of sequence number ranges of segments of data that
+  have been received but have no been acknowledged since they are non-contiguous
+
+- each device modifies its retransmission queue so that each segment includes a
+  flag that is set to 1 if segment has been selectively acknowledged (SACK bit)
+
+- device then uses a modified version of "aggressive" method  where upon
+  retransmission of a segment all later segments are also retransmitted unless
+  their SACK bits are set to 1
+
+- after retransmitted segments SACK bits are cleared, done for robustness to
+  handle cases where for whatever reason client changes its mind about having
+  received a segment
+
+- the client shoudl send an acknowledgment indicating official receipt of SACK
+  segments
+
+- if this does not happen, server must send another selective acknowledgment or
+  else it will be automatically re-sent with its time expires
+  
