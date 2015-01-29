@@ -18,3 +18,95 @@ link: https://blogs.it.ox.ac.uk/oxcloud/2013/03/25/rescanning-your-scsi-bus-to-s
 
 --- break
 
+keywords: containers,lxc,intro
+
+link: http://www.janoszen.com/2013/05/14/lxc-tutorial/
+
+- not separate technology, it is based on various features of the Linux kernel
+  (PID and Network namespaces, cgroups, etc)
+
+	* network namespace
+	
+		- virtual environment (VE) gets own separate network stack and
+		  one or more NIC
+
+	* PID namespace
+
+		- for VE PID will start at 1 (as normally in Linux), the host
+		  machine sees all processes in VE and PID's get translated to
+		  non-conflicting PID
+		
+	* UID namespace
+
+		- every VE can have it's own set of UID without conflicting with
+		  each other
+
+	* IPC namespace
+
+		- pipes, named pipes, system V IPC (message queues, semaphores,
+		  shared memory) are unique to VE
+
+	* utsname namespace	
+
+		- host name of machine (this namespace allows VE to change
+		  it's host name without affecting other VE or parent host)
+
+- /var/lib/lxc contains a folder for each VE with a config and fstab file in it
+
+- /usr/lib/lxc/templates/lxc-* contains LXC templates which build the VE content
+
+- /etc/lxc/auto auto starts linked VE config files
+
+--- break
+
+keywords: containers,lxc,create
+
+link: http://www.janoszen.com/2013/05/14/lxc-tutorial/
+
+- create a new container with the lxc-create command
+
+syntax:
+
+	lxc-create -n CONTAINERNAME -t TEMPLATE
+
+example:
+
+	lxc-create -n mycontainer -t ubuntu
+
+- additional options are
+
+	-f CONFIGUATION : specifies configuration file to use
+
+	-B BACKINGSTORE : dir, lvm, loop, btrfs, zfs 
+
+	
+--- break
+
+keywords: containers,lxc,start
+
+link: http://www.janoszen.com/2013/05/14/lxc-tutorial/
+
+syntax:
+
+	lxc-start -n CONTAINERNAME [-d]
+
+example:
+
+	lxc-start -n debian -d 		# -d starts in background
+
+- if you don't start in background your terminal will become the tty1
+  console of the container
+
+--- break
+
+keywords: containers,lxc,console,connect
+
+link: http://www.janoszen.com/2013/05/14/lxc-tutorial/
+
+syntax:
+
+	lxc-console -n CONTAINERNAME
+
+example:
+
+	lxc-console -n debian
