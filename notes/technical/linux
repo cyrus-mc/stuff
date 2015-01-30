@@ -1,5 +1,839 @@
 --- break
 
+keywords: linux,performance,cpu,usage,top
+
+link: http://shandrz.blogspot.com/2012/10/linux-performance-troubleshooting-cpu.html
+
+Display linux tasks.
+
+Once loaded press ? to see help options (ie: O to sort by specific field).
+
+** press 1 to show CPU load separately for every core **
+
+The "CPU(s)" statistics:
+
+	- us: time CPU spent running users' processes that are not niced
+	- sy: time CPU has spent running the kernel and its processes
+	- ni: time CPU has spent running users' processes that have been niced
+	- wa: time spent waiting for I/O
+	- hi: amount of time CPU has been servicing hardware interrupts
+	- si: amount of time CPU has been servicing software interrupts
+	- st: amount of CPU stolen from this VM by hypervisor 
+
+--- break
+
+keywords: linux,performance,cpu,usage,mpstat
+
+link: http://shandrz.blogspot.com/2012/10/linux-performance-troubleshooting-cpu.html
+
+Report processors related statistics.
+
+syntax: 
+
+	mpstat [options] interval count
+
+example:
+
+	mpstat -P ALL 5
+
+The statistics fields:
+
+	- %usr: % of CPU utilization that occurred while executing at the user level
+	- %nice: % of CPU utilization that occurred while executing at the user level
+		 with nice priority
+	- %sys: % of CPU utilization that occurred while executing at system level (kernel)
+		(does not include hardware and software interrupts)
+	- %iowait: % of time CPU(s) were idle during which system had outstanding disk I/O
+	- %irq: % of time spent by CPU(s) to service hardware interrupts
+	- %soft: % of time spent by CPU(s) to service software interrupts
+	- %steal: % of time spent in involuntary wait by virtual CPU(s) while hypervisor
+	 	  was servicing another VM
+	- %guest: % of time spent by CPU(s) to run a virtual processor
+	- %idle: % of time CPU(s) were idle and system did not have an outstanding I/O request
+
+--- break
+
+keywords: linux,performance,cpu,usage,vmstat
+
+link: http://shandrz.blogspot.com/2012/10/linux-performance-troubleshooting-cpu.html
+
+Report virtual memory statistics (processes, memory, paging, block IO, traps, disks and cpu activity).
+
+Much of the same information regarding CPU usage as the above commands. Two important columns are
+	
+	- r: number of processes waiting for runtime, if always > cores it is a sign that CPU resources
+	     may be limited
+
+	- b: number of process in uninterruptible sleep (a sleep state that won't handle a signal right)
+
+** uninterruptible sleep: 
+
+		- a sleep state that won't handle a signal right away (accumulated signals will be
+		  noticed when the process returns from the system call or trap)
+
+		- will wake only as a result of a waited-upon resource becoming available (usually I/O) or
+		  or after a time-out occurs during that wait 
+
+** D value in STAT field of ps shows process in uninterruptible sleep **
+
+--- break
+
+keywords: linux,performance,cpu,usage,pidstat
+
+link: http://shandrz.blogspot.com/2012/10/linux-performance-troubleshooting-cpu.html
+
+Report statistics for Linux tasks.
+
+Allows you to monitor the behaviour of one program:
+
+syntax: 
+
+	pidstat -p { pid [,...] } [options] interval count
+
+example:
+
+	pidstat -p 1042 1
+
+	pidstat -t -p 1488 1		# show individual threads of a process
+
+	pidstat -t -d -p 1488 1		# show I/O statistics
+
+--- break
+
+keywords: linux,performance,memory,usage,top
+
+link: http://shandrz.blogspot.com/2012/11/linux-performance-troubleshooting-memory.html
+
+Top, in addition to CPU, shows memory statistics.
+
+The Mem line shows:
+
+	- total RAM in the system
+	- used memory
+	- free memory
+	- buffers: memory that is used during read/write disk operations
+	- cached: caches disk blocks and buffering block I/O operations (part of the memory, not swap)
+
+** buffers and cached can be considered as free memory available to applications **
+
+- swap space is used to swap (paging or swapping) memory in and out of memory to satisfy demands of system
+
+- kernel will use LRU (least recently used) to swap memory out to swap when needed.
+
+- when system runs out of SWAP space the out-of memory/OOM-killer will be launched
+
+- it uses a scoring system (/proc/PID_of_process/oom_score, value depends on parameters such as run time,
+  privileged process, etc) to determine which applications to kill to free memory
+
+- higher value means the process is more likely to be killed
+
+- you can manually adjust score by setting value in /proc/PID_of_process/oom_score_adj (-16 to 16, where
+  -17 has special meaning, meaning never to kill)
+
+Per-process memory information can be obtained from the following columns:
+
+	- VIRT : total amount of virtual memory used by task (all code, data and shared
+		plus pages that have been sweapped out and pages that have been mapped
+		but not used)
+
+	- RES : resident size, non-swapped physical memory a task has used
+
+	- SHR : amount of shared memory used by a task
+
+	- %MEM : tasks currently used share of available physical memory 
+
+--- break
+
+keywords: linux,performance,memory,usage,vmstat
+
+link: http://shandrz.blogspot.com/2012/11/linux-performance-troubleshooting-memory.html
+
+VMstat will also provide usefull memory information. 
+
+You can view SWAP utilization through the following columns:
+
+	- swpd: amount of swapped (virtual) memory
+	- si: amount of memory swapped in from disk (/s)
+	- so: amount of memory swapped to disk (/s)
+
+High values for si and/or so will usually corresponding to high values for column b and wa.
+
+- /proc/PID_of_process/status has a field VmSwap (amongst other things) that lists the amount of memory
+  in swap for a specific process
+
+--- break
+
+keywords: linux,performance,disk,io,iostat
+
+link: http://shandrz.blogspot.com/2012/11/linux-performance-troubleshooting-hard.html
+
+Report CPU statistics and I/O statistics for devices and partitions.
+
+Columns represent:
+
+	- tps : transfers (I/O request) per second issued to device (multiple logical requests can be
+	        combined into a single I/O request, transfer is of indeterminate size)
+
+	- avgrq-sz : average size (in sectory) of requets that were issued
+
+	- avgqu-sz : averge queue length of requets that were issued
+
+	- await : average time (ms) for I/O requests issue (time in queue + time servicing)
+
+	- r_await : average time (ms) for read requests issued (queue + service time)
+
+	- w_await : average time (ms) for write requests issued (queue + service time)
+
+	- %util : % of CPU time during which I/O requests were issued to the device (device saturation
+		  occurs when this device is close to 100%)
+
+syntax:
+
+	iostat [options] interval count
+
+example:
+
+	iostat -dx /dev/sda 1		# show extended statistics for /dev/sda
+
+* if you don't specify device it will show all devices, use -N to convert device mapper numbers to
+  names *
+
+--- break
+
+keywords: linux,performance,disk,io,iotop
+
+link: http://shandrz.blogspot.com/2012/11/linux-performance-troubleshooting-hard.html
+
+Simple top-like I/O monitor.
+
+syntax:
+
+	iotop [options]
+
+example:
+
+	iotop -o			# only show processes or threads actually doing I/O
+
+--- break
+
+keywords: linux,performance,disk,io,dstat
+
+link: http://shandrz.blogspot.com/2012/11/linux-performance-troubleshooting-hard.html
+
+Versatile tool for generating system resource statistics. 
+
+Very powerfull tool that can show you statistics for any system resource, not just I/O
+
+syntax:
+
+	dstat [options] [delay [count]]
+
+example:
+
+	dstat --top-io-adv --bw			# show most expensive I/O process
+
+	dstat --top-io-adv --bw -n -c		# enable net and CPU statistics as well
+
+** many many combinations **
+
+--- break:
+
+keywords: performance,tuning,tune,processor,cpu,numa,smp
+
+link: http://www.redbooks.ibm.com/redpapers/pdfs/redp4285.pdf
+link: https://access.redhat.com/site/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Performance_Tuning_Guide/index.html#idm74153136
+
+Symmetric Multi-Procssor (SMP): each CPU has the same logical path to each memory location
+				(usually a parallel bus)
+
+Once CPU count gets about a certain point (8 or 16) the number of parallel traces required
+to allow equal access to memory uses to much of the available board real estate.
+
+Non-Uniform Memory Access (NUMA): each package/socket combination has one or more dedicated
+				  memory area for high speed access. Each socket also has
+				  an interconnect to other sockets for slower access to 
+				  other sockets' memory
+
+* the interconnects are serial bus single-wire communication paths with a very high clock
+  rate (AMD: HyperTransport/HT, Intel QuickPath Interconnect/QPI) *
+
+Given the peformance penalty for accessing non-local memory, performance sensitive
+applications should avoid regularly accessing remove memory in a NUMA topology system.
+
+App should be setup so that it stays on a particular node and allocates memory from 
+that node.
+
+--- break:
+
+keywords: performance,cpu,tune,tuning,affinity,taskset
+
+link: https://access.redhat.com/site/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Performance_Tuning_Guide/index.html#idm74153136
+
+To retrieve and set the CPU affinity of a running process use command taskset.
+
+Taskset binds a process to a specified CPU or set of CPUs. However it will not
+guarantee local memory allocation (use numactl for that).
+
+CPU affinity is represented as a bitmask with lowest-order bit the first logical
+CPU, typically given in HEX.
+
+syntax:
+
+	taskset -p mask pid		# set affinity of currently running process
+	taskset mask -- program		# launch process with a certain affinity
+
+example:
+
+	taskset -p 0x0000003 123	# set affinity to logical CPU 0 and 1
+
+	taskset 0x00001 vi		# set affinity to logical CPU 0
+
+	taskset -c 0,5,7-9 -- myprogram	# set affinity to CPU 0,5,7,8 and 9
+
+** for multi-threaded apps, to prevent cache trashing it is best to bind them
+   to a node (NUMA, see below) than a single core as this will allow threads to
+   share cache lines on multiple levels (first, second, etc) **
+
+** binding an application to a single core may be performant if all threads
+   are accessing the same cached data **
+
+--- break:
+
+keywords: performance,cpu,tune,tuning,nice,renice
+
+link: http://www.redbooks.ibm.com/redpapers/pdfs/redp4285.pdf,122
+
+Process priority is a number that determines the order in which the
+process is handled by the CPU and is determined by dynamic priority
+and static priority.
+
+Process with higher process priority has a greater chance of getting
+permission to run on CPU.
+
+Kernel dynamically adjusts dynamic priority up or down as needed using
+a heuristic algorithm based on process behaviours and characteristics 
+(interactive vs. non-interactive, etc). 
+
+Users changes static priority through nice or renice. Higher static
+priority will have longer time slice.
+
+Nice level: 19 (lowest priority) to -20 (highest priority)
+
+Default nice level is 0.
+
+syntax:
+
+	nice -n pri cmd		# start cmd with nice level pri
+	renice level pid	# change nice level of pid
+
+example:
+
+	nice -n -5 mycommand	# set nice priority to -5
+
+	renice 10 255		# set nice priority to 10 for PID 255
+
+--- break:
+
+keywords: performance,cpu,tune,tuning,numa,numactl
+
+link: https://access.redhat.com/site/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Performance_Tuning_Guide/index.html#s-cpu-tuning
+
+Linux distributions are well suited for NUMA systems but applications might not always
+be. Bottlenecks caused by non-NUMA aware applications can cause performance degredations
+that are hard to identify.
+
+numactl:
+
+	- runs processes with a specified scheduling or memory placement policy
+
+	- selected policy is set for process and all of its children
+
+	- can also set a persistent policy for shared memory segments or files
+
+	- set CPU affinity and memory affinity of a process
+
+	- uses /sys file system to determine system topology
+
+The /sys file system contains information about
+
+	- how CPUs, memory and peripheral devices are connected via NUMA interconnects
+
+	- /sys/devices/system/cpu contains info about how a systems CPUs are connected
+	  to one another
+
+	- /sys/devices and /sys/node directory contains info about NUMA nodes and
+	  relative distances between those nodes
+
+syntax:
+
+	numactl --membind=nodes program		# only allocate memory from specified nodes
+
+	numactl --cpunodebind=nodes program	# only execute on CPUs belonging to nodes
+
+	numactl --localallow [...]		# specifies that memory should always be
+						  allocated on current node
+
+	numactl --preferred [ ... ]		# where possible, memory allocated on current node
+						  fallback to other if not possible
+
+--- break:
+
+keywords: performance,cpu,tune,tuning,numa,numastat
+
+link: http://www.redbooks.ibm.com/redpapers/pdfs/redp4285.pdf,123
+link: https://access.redhat.com/site/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Performance_Tuning_Guide/index.html#s-memory-numastat
+
+numastat:
+
+	- displays memory statistics (allocation hits and misses) for processes
+	  and the operating system on per-NUMA-node basis
+
+	- optimal CPU performance is indicated by low numa_miss and numa_foreign
+	  values
+
+	- numa_miss has a correspnoding numa_foreign event
+
+	- gets info from /sys/devices/system/node/#/numastat
+
+syntax:
+
+	numastat -p pattern		# display per-node mem info for specified pattern
+					  (either PID or process name)
+
+	numastat -snode			# sorts displayed data in descending order so that
+					  biggest memory consumers are listed first
+					  (optional node argument) 
+
+
+--- break
+
+keywords: performance,cpu,tune,tuning,numa,numad
+
+link: https://access.redhat.com/site/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Performance_Tuning_Guide/index.html#s-cpu-numad
+
+numad:
+
+	- automatic NUMA affinity management daemon
+
+	- monitors NUMA topology and resource usage within a system to dynamically
+	  improve NUMA resource allocation and management
+
+	- periodically accesses information from /proc to monitor available
+	  system resources on a per-node basis
+
+	- attempts to place significant processes on NUMA nodes that
+	  have sufficient aligned memory and CPU resources
+
+	- current thresholds for process management are at least 50% of one CPU
+	  and at least 300 MB of memory
+
+	- attempts to maintain resource utilization level and rebalances
+	  allocations when necessary by moving processes between NUMA nodes
+
+	- also provides pre-placement advice service that can be queried to
+	  provide assistance with initial binding of CPU and memory
+
+Primary benefit is for long-running processes that consume significant amounts of
+resources. Unlikely to improve short lived processes. Systems with continuous
+unpredictable memory access patterns (ie: large in-memory databases) also likely
+won't benefit.
+
+syntax:
+
+	service numad start		# start as a daemon/service
+
+	numad -S mode -p pid		# add pid to explicity inclusion list
+					  and set operating mode
+
+example:
+
+	numad -S 0 -p 123		# add pid 123 to inclusion list and scan
+					  for only processes in inclusion list
+
+	numad -i 0			# stop numad
+
+** stopping doens't remove the changes it made to improve NUMA affinity **
+
+--- break
+
+keywords: performance,cpu,scheduling,scheduler,realtime,policies,numa
+
+link: https://access.redhat.com/site/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Performance_Tuning_Guide/index.html#s-cpu-scheduler
+link: http://www.redbooks.ibm.com/redpapers/pdfs/redp4285.pdf,23
+
+The scheduler is responsible for keeping the CPUs in the system busy. Linux scheduler
+implements a number of scheduling policies that determine when and for how long a
+thread runs on a particular CPU core.
+
+Scheduler is NUMA aware and ensures that load balancing will not occur across NUMA nodes
+unless node gets overburdened. Load balancing across processors in a scheduler domain
+(ie: node) will be load balanced with every scheduler tick, workload across scheduler
+domains will only occur if that node is overloaded and asks for load balancing.
+
+	- normal policies:
+
+		- yield better throughput (network packets / sec, writes to disk, etc)
+
+		* SCHED_OTHER:
+
+		  - default scheduling policy
+
+		  - uses Completely Fair Scheduler (CFS) to provide fair access periods
+		    for all threads
+
+		  - establishes dynamic priority and static priorit set by niceness level
+
+		* SCHED_BATCH:
+
+		  - intended for low priority jobs, not useful for performance tuning
+
+		* SCHED_IDLE:
+
+		  - intended for low priority jobs, not useful for performance tuning
+
+	- realtime policies:
+
+		- threads are not time sliced like normal threads
+
+		- in general, used for time critical/important tasks that need to be
+		  scheduled quickly and do not run for extended periods of times (low latency)
+
+		* SCHED_FIFO: 
+
+		  - defines a fixed priority (1 - 99) for each thread
+
+		  - scheduler schedules the highest priority thread that is ready to run
+
+		  - runs until it blocks, exits or is preempted by higher priority thread
+
+		  - even lowest priority thread runs before any thread with a non-realtime
+		    priority
+
+		  - bandwidth cap mechanisms used to protect realtime threads from 
+		    monopolizing the CPU
+
+		  - /proc/sys/kernel/sched_rt_period_us defines time (us) to be considered
+		    100% of CPU bandwidth (default = 1000000 us = 1 second)
+
+		  - /proc/sys/kernel/sched_rt_runtime_us defines time (us) period to devoted
+		    to running realtime threads (default = 950000 us = 0.95 second)
+
+		  - priority 99 not recommended as it places priority at same level as migration
+		    and watchdog threads and if process goes into computational loop they will
+		    not be able to run (uniprocessor systems will eventually lock up)
+
+		* SCHED_RR:
+
+		  - round robin variant of SCHED_FIFO
+
+		  - threads given fixed priority (1 - 99) 
+
+		  - threads with same priority are scheduled round-robin style within a certain
+		    quantum or time slice (sched_rr_get_interval system call returns the value
+	  	    of time slice but duration of time slive cannot be set by user)
+
+		  - policy useful if you need multiple thread to run at same priority
+
+--- break
+
+keywords: performance,cpu,scheduling,scheduler,realtime,policies,chrt
+
+chrt:
+
+	- sets or retrieves the real-tim scheduling attributes of an existing PID or
+	  runs COMMAND with the given attributes
+
+	- both policy and priority can be set and retrieved
+
+syntax:
+
+	chrt [options] PRIORITY COMMAND [arg] ..
+	chrt [options] -p [PRIORITY] PID
+
+example:
+
+	chrt -r -p 2 1815		: set SCHED_RR with priority 2 on PID 1815  
+	
+--- break
+
+keywords: performance,cpu,scheduling,scheduler,vmware,cores,sockets,numa
+
+link: http://frankdenneman.nl/2013/09/18/vcpu-configuration-performance-impact-between-virtual-sockets-and-virtual-cores  
+
+	- vSphere 4.1 introducted multi-core vCPU to avoid OS socket restrictions
+
+	- no performance impact when using cores vs. sockets
+
+	- the virtual machine vCPU configuration is the sum of number of cores * number
+	  of sockets
+
+	- vmkernel schedules a virtual machine monitor (VMM) for each vCPU
+
+	- socket configurations are transparent for the vmkernel
+
+	- when VM powers on in a NUMA system, it is assigned a home node where
+	  memory is preferentially allocated
+
+	- vCPUs are grouped in a NUMA client and this is scheduled on a physical NUMA
+	  node
+
+	- use esxtop (press M for memory, V to display VM worlds only, F and select
+	  G for NUMA stats) and column NHN identifies current NUMA home node
+
+	- field N%L indicates how much memory is accessed by NUMA client (should be as
+	  close to 100% as possible, local memory)
+
+	- field GST_ND# indicates how much memory is provided to VM on node #
+
+	- field NLMEM indicates current amount of local memory being accessed by VM
+	  on home node (should equal GST_ND#)
+
+	- if VM has > 8 vCPU VMkernel presents NUMA client home nodes to guest OS
+	  (vNUMA)
+
+	- Host-Add feature only allows you to increase virtual socket count
+
+--- break
+
+keywords: vmware,numa,vcpu,memory,sizing,wide
+
+link: http://frankdenneman.nl/2010/02/03/sizing-vms-and-numa-nodes/ 
+link: http://frankdenneman.nl/2010/09/13/esx-4-1-numa-scheduling/
+
+	- on non-NUMA systems ESX CPU scheduler spreads load across all
+	  sockets in round robin manner (improves performance by utilizing
+	  as much cache as possible)
+
+	- each vCPU is scheduled on a seperate socket
+
+	- on NUMA systems NUMA CPU scheduler is used and assignes each VM to
+	  a NUMA node (scheduler tries to keep vCPU and memory located in
+	  same node)
+
+	- VM with multiple CPUs, all vCPUs will be assigned to same node and
+	  will reside in same socket
+
+	vCPU: 
+
+	  - if VM cannot fit inside one NUMA node, ESX falls back to non-NUMA
+	    scheduler for that VM and VM will not benefit from local memory
+	    optimization (prior to 4.1)
+
+	  - if CPU scheduler detect VM containing more vCPUs than available cores
+	    (ignores hyper-threading) in one node it will split VM into multiple
+	    NUMA clients (determined at power on)
+
+	  - each NUMA client contains as many vCPUs possible that fit inside
+	    a NUMA node
+
+	  - memory will be interleaved across the home nodes of all NUMA clients
+
+	memory:
+
+	  - if VM memory > local memory size will stop ESX kernel from using NUMA
+	    optimizations for that VM (memory will be scattered all over server)
+
+	  - use esxtop to determine memory per node, press M for memory and look
+	    at the NUMA line (value in brackets is free memory)
+
+	  - when VM has certain amount of remote memory ESX scheduler migrates
+	    VM to other node to improve locality (threshold not documented but
+	    considered poor memory locality when VM has < 80% locally)
+
+--- break
+
+keywords: vmware,numa,memory,transparent,page,sharing
+
+link: http://frankdenneman.nl/2010/02/03/sizing-vms-and-numa-nodes/ 
+
+	- transparent page sharing (TPS) can increase latency if VM on node 0
+	  will share page with VM on node 1
+
+	- therefore TPS across nodes it disabled by default (can be turned off
+	  but not recommended)
+
+	- TPS still works but will share identical pages only inside nodes
+
+	- performance hit across remote memory >! TPS
+
+--- break
+
+keywords: vmware,numa,scheduling,wide,vcpu,size
+
+link: http://frankdenneman.nl/2010/09/13/esx-4-1-numa-scheduling/
+
+--- break
+
+keywords: performance,interrupts,irq,tune,tuning
+
+link: https://access.redhat.com/site/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Performance_Tuning_Guide/index.html#s-cpu-irq
+link: http://www.redbooks.ibm.com/redpapers/pdfs/redp4285.pdf,122
+
+Interrupt request (IRQ) is a request for service:
+
+	- sent at hardware level (either by a dedicated hardware line or across 
+	  hardware buss as information packet / Message Signaled Interrupt/MSI)
+
+	- receipt of interrupt prompts a switch to interrupt context
+
+	- kernel interrupt dispatch code retrieves IRQ number and the associated
+	  list of registered Interrupt Service Routines (ISRs)
+
+	- calls each ISR in turn
+
+	- ISR acknowledges interrupt and ignores redundant interupts from same IRQ
+
+	- then queues deferred handler to finish processing interrupt and stop the
+	  ISR from ignoring future interrupts
+
+	- /proc/interrupts lists number of interrupts per CPU per I/O device
+
+	- displays IRQ number, number of interrupt handler by each CPU core, 
+	  interrupt type and a comma-delimited list of drivers that are registered
+	  to receive that interrupt
+
+	- /proc/irq/#/smp_affinity sets IRQ affinity (defines CPU cores allowed to
+	  execute the ISR for that IRQ)
+
+	- setting affinity allows you to assign both interrupt and application thread
+	  to one or more specific cores to allow cache line sharing between the
+	  specified interrupt and application threads
+
+	- value stored is a hexidecimal bit-mask representing all CPU cores in system
+
+
+example:
+
+	# grep eth0 /proc/interrupts
+	32:	0	140	45	853242	PCI-MSI-edge	eth0
+
+	# cat /proc/irq/32/smp_affinity
+	f
+
+	# echo 1 > /proc/irq/32/smp_affinity
+	# set only CPU0 to service this interrupt
+
+** on systems with "interrupt steering" modifying smp_affinity sets up the
+   hardware so that the decision to service interrupt with a particular CPU
+   is made at hardware level with no intervention from kernel **
+
+--- break
+
+keywords: performance,memory,hugetlb,huge,translation,lookaside,buffer
+
+link: https://access.redhat.com/site/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Performance_Tuning_Guide/index.html#s-memory-tlb
+link: http://www.redbooks.ibm.com/redpapers/pdfs/redp4285.pdf,123
+
+- physical memory addresses are translated to virtual memory as part of memory
+  management
+
+- mapped relationship is stored in data structure known as the page table
+
+- reading the page table for every address is time and resource expensive there
+  is a cache for recently used addresses (Translation Lookaside Buffer (TLB))
+
+- TLB can only cache so many address mappings and a TLB miss will impact performance
+  as it will have to read from page table in memory
+
+- applications with large memory requirements will suffer more TLB miss because of
+  relationship between their memory requirements and size of the pages used to cache
+  address mappings
+
+- HugeTLB allows app to use a much larger page size than normal so that a single TLB
+  entry can map a larger address space
+
+- feature exposed to applications by means of a filesystem interface
+
+- /proc/sys/vm/nr_hugepages sets the number of hugepages to be allocated by kernel
+
+- if application uses huge pages through mmap() system call, you have to mount a
+  file system of type hugetlbfs
+
+	mount -t hugetlbfs none /mnt/hugepages 
+
+- /proc/meminfo provides information about hugetlb pages (HugePages_Total, HugePages_Free
+  Hugepagesize)
+
+- configuration can also be specified on kernel command line (hugepagesize, hugepages)
+
+** main kernel address space is mapped with huge pages, reducing TLB pressure from kernel code **
+
+--- break
+
+keywords: performance,memory,tuning,huge,pages,transparent
+
+link: https://access.redhat.com/site/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Performance_Tuning_Guide/index.html#s-memory-transhuge
+
+- huge pages much be assigned at boot time
+
+- they are also difficult to manage manually and often require code changes
+
+- transparent huge pages (THP) is an abstraction layer that automates most aspects
+  of creating, managing and using huge pages
+
+- when page fault happens, page fault handler will attempt to allocate a huge page to satisfy it
+
+- if it succeed, huge page will be filled and any existing small pages in the new page's address
+  range will be released and huge page inserted into virtual memory area (VMA)
+
+- if no huge pages available, kernel falls back to small pages (transparent to the application)
+
+- huge pages must be swappable to prevent system from running out of memory, so rather than complicate
+  swapping code, huge page are slit back into small pages if that page needs to be reclaimed
+
+- currently only works with anonymous pages; the work to integrate huge pages with the page cache 
+  is not done and only supports 2MB page sizes
+
+- allocation of huge pages depends on availablity of large, physically-contiguous chunks of
+  memory
+
+- pages may become available at inconvenient times (process has faulted in a number of small
+  pages), therefore a kernel thread khugepaged was created
+
+- thread will occasionally attempt to allocate a huge page, if it succeeds, it will scan through
+  memory looking for a place where the huge page can be substituted for a bunch of smaller pages
+
+- thus available huge pages should be quickly placed into service, maximizing the use of huge pages
+  in system as a whole
+
+- /sys/kernel/mm/transparent_hugepage contains parameters to tweak THP
+
+- enabled value can be set to:
+
+	* always: to always use THP
+	* madvice: only in VMAs marked with MADV_HUGEPAGE
+	* never: disable feature
+
+- defrag takes same values and controls whether kernel should make aggressive use of memory
+  compaction to make more huge pages available
+
+--- break
+
+keywords: performance,memory,tuning,compaction
+
+link: https://lwn.net/Articles/368869
+
+- as system runs, pages tend to be scattered between users, making it hard to find
+  groups of physically-contiguous pages when they are needed
+
+- memory compaction works by scanning the list of used and free pages and moving
+  pages to make the used and free spaces contiguous
+
+- not all pages can be moved at will (only those which are addressed through a
+  layer of indirection - so most user-space pages - and pages which are not
+  pinned down)
+
+- running of compaction algorithm can be triggered by one of two ways:
+
+	1) write a node number to /proc/sys/vm/compact_node causing compaction
+	   to happen on indicated NUMA node
+
+	2) system fail in attempt to allocate a higher-order page, compaction
+	   will run as a preferable alternative to freeing pages through direct
+	   reclaim
+
+--- break
+
 keywords: linux,rescan,scsi
 
 link: https://blogs.it.ox.ac.uk/oxcloud/2013/03/25/rescanning-your-scsi-bus-to-see-new-storage/
