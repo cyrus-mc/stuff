@@ -1,5 +1,129 @@
 --- break
 
+keywords: cisco,asa,factory,reset
+link: http://www.binaryroyale.com/resetting-a-cisco-asa-5510-to-factory-defaults/
+
+- connect console cable
+
+- power cycle 
+
+- watch boot progress and when prompted press Esc to interrupt 
+
+- this will enter ROM monitor mode with prompt rommon #0>
+
+- enter confreq comment to view current configuration register setting
+
+	rommon #0> confreq
+
+- default setting will be 0x01
+
+- answer no when ask if you want to change it
+
+- change configuration register to 0x41 (cause appliance to bypass saved config)
+
+	rommon #1> confreq 0x41
+
+- reboot appliance
+
+	rommon #2> boot
+
+- set enable password
+
+	ciscoasa> enable
+
+- erase startup config
+
+	ciscoasa# write erase
+
+- enter configuration mode
+
+	ciscoasa# configure terminal
+
+- reset configuration register to default of 0x01
+
+	ciscoasa(config)# config-register 0x01
+
+- save settings
+
+	ciscoasa# write
+
+- reboot appliance
+
+	ciscoasa# reload
+
+--- break
+
+keywords: asa,local,database,authentication,users
+
+link: http://www.cisco.com/c/en/us/td/docs/security/asa/asa82/configuration/guide/config/access_aaa.html#wp1062044
+
+- local database can be used for CLI access authentication, privileged mode
+  authentication, command authorization, network access auth and VPN auth and
+  authorization
+
+- can't use for network access authorization
+
+- in multiple context mode you can configure usernames in system execution
+  space to provide individual logins using login command
+
+- syntax
+
+	username NAME {nopassword | password PASS [mschap]} [privilege LEVEL]
+
+- default privilege is 2, if aaa authorization command LOCAL not defined this
+  allows management access to privilege EXEC mode
+
+--- break
+
+keywords: asa,local,database,user,attributes,service-type
+link: http://www.cisco.com/c/en/us/td/docs/security/asa/asa82/configuration/guide/config/access_aaa.html#wp1062044
+
+- syntax:
+
+	username USERNAME attributes
+
+- syntax:
+
+	service-type {admin | nas-prompt | remote-access}
+
+- admin keyword is default and allows full access to any services specified by the aaa
+  authentication console LOCAL commands
+
+- nas-prompt allows access to CLI when you configure aaa authentication {telnet|ssh|serial}
+  console LOCAL command
+
+- nas-prompt denies ASDM config access if you config the aaa authentication http console LOCAL
+
+- ASDM monitoring access is allowed
+
+- if you config enable auth with aaa authentication enable console LOCAL user cannot access
+  privileged EXEC mode using enable
+
+- remote-access keyword denies management access (user can't use any service specified by
+  aaa authentication console LOCAL commands, excluding serial)
+
+--- break
+
+keywords: asa,local,database,authenticatoin,enable,privilege,exec
+link: http://www.cisco.com/c/en/us/td/docs/security/asa/asa82/configuration/guide/config/access_management.html#wp1042028
+
+- authenticate users with AAA server or local database when using enable command
+
+- alternatively users are automatically authenticated with local database when they enter
+  login command
+
+- if you do not authenticate enable ASA prompts for system enable password and you are no
+  longer logged in as a particular user
+
+- maintaining username is important when you perform command authorization where usernames
+  are important to determine the commands a user can enter
+
+- syntax:
+
+	aaa authentication enable console {LOCAL | server_grp [LOCAL]}
+
+--- break
+
 keywords: trustsec,security,group,tags,sgt
 
 link: http://www.cisco.com/c/dam/en/us/td/docs/solutions/Enterprise/Security/TrustSec_2-0/trustsec_2-0_dig.pdf,page 141 
@@ -97,3 +221,4 @@ Modify the Authority-ID Description (useful when troubleshooting PAC related pro
 Configure Switch
 
 	1) Enter configuration mode and enable 802.1X and SGA features
+

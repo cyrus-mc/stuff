@@ -211,7 +211,7 @@ link: http://www.tcpipguide.com/free/t_TCPNonContiguousAcknowledgmentHandlingand
   handle cases where for whatever reason client changes its mind about having
   received a segment
 
-- the client shoudl send an acknowledgment indicating official receipt of SACK
+- the client should send an acknowledgment indicating official receipt of SACK
   segments
 
 - if this does not happen, server must send another selective acknowledgment or

@@ -1,0 +1,345 @@
+--- break
+
+keywords: types,providers,custom,resource
+
+link: https://docs.puppetlabs.com/guides/custom_types.html#types-and-providers
+
+- new puppet type requires two things
+
+	- type: model of resource type (defines parameters, handles input validation, determines
+	        what features a provider can (or should) provide
+
+	- provider: one or more providers for that type, whch implements the type by translating
+		    its capabilities into specific operations
+
+- type and provider must be present in module (lib directory)
+
+	- lib/puppet/type/<TYPE-NAME>.rb
+	- lib/puppet/provider/<TYPE-NAME>/<PROVIDER-NAME>.rb
+
+--- break
+
+keywords: type,custom,resource
+
+link: https://docs.puppetlabs.com/guides/custom_types.html#creating-a-type
+
+- syntax
+
+	Puppet::Type.newtype(:NAME) do
+		@doc = "Documentation ..."
+		# ... the code ...
+	end
+
+- name of file containing type must match the types name
+
+- code block will implement type and contain all properties and parameters
+
+- options can be specified after name, only :self_refresh => true is available (cause resource
+  to refresh (as if it had recevied an event via a notify/subscribe relationship))
+
+--- break
+
+keywords: type,custom,resource,properties,parameters
+
+link: https://docs.puppetlabs.com/guides/custom_types.html#properties-and-parameters
+
+- properites and parameters will become resource attributes
+
+- properties should map more or less directly to something measurable on system (ie: UID, GID)
+
+- parameters change how puppet manages a resource but do not necessarily map directly to something
+  measurable (ie: managehome of user type)
+
+- also have special attributes called metaparameters
+
+- normal type will define multiple properties and must define at least one parameter
+
+--- break
+
+keywords: type,custom,resource,properties
+
+link: https://docs.puppetlabs.com/guides/custom_types.html#properties
+
+- properties interact with resource's provider (property named owner will call owner method on
+  provider)
+
+- set property will call property-name= method
+
+- ensure property is special as it creates or destroys resources
+
+	Puppet::Type.newtype(:NAME) do
+		ensurable
+		...
+	end
+
+- uses three methods on provider: create, destroy and exists?
+
+- can extend ensure to accept other values
+
+- syntax
+
+	Puppet::Type.newtype(:NAME) do
+		ensurable
+		newproperty(:NAME) do
+			desc = "Description of property .."
+
+			/* limit to certain values */
+			newvalue(:VALUE)
+			newvalue(:VALUE)
+
+			/* validate *
+			validate do |value|
+				unless value =~ /^\w+/
+					raise ArgumentError, "%s ...." % value
+				end
+			end
+		end
+	end
+
+- order important, puppet always checks and fixes properties in order defined
+
+- multiple values assigned to property considered in sync if any of those match
+
+- if none match first value will be used when syncing
+
+	/* match all values in array */
+	newproperty(:NAME, :array_matching => :all) do
+	...
+	end
+
+--- break
+
+keywords: type,custom,resource,parameters
+
+link: https://docs.puppetlabs.com/guides/custom_types.html#parameters
+
+- defined same as properties only never result in methods being called on providers
+
+- one mandatory parameter, namevar, uniquely identifies each resource
+
+- title of resource is default if not specified when declaring resource
+
+	Puppet::Type.newtype(:NAME) do
+		newparam(:NAME) do
+			desc = "Description of parameter .."
+
+			/* valid values */
+			newvalues(:VALUE1, :VALUE2, /.+/, ..)
+		end
+
+		/* option 1 for namevar decleration */
+		newparam(:name) do
+			desc = "..."
+		end
+
+		/* option 2 for namevar decleration */
+		newparam(:path, :namevar => true) do
+			...
+		end
+
+		/* option 3 for namevar decleration */
+		newparam(:path) do
+			isnamevar
+		end
+
+		validate do |value|
+			if value = ...
+				raiseArgumentError, "Error string ..."
+			else
+				super
+			end
+		end
+
+		munge do |value|
+			case value
+			when ...
+				:VALUE
+			else
+				super
+			end
+		end
+
+		/* create a boolean parameter */
+		newparam(:NAME, :boolean => true, :parent => Parent::Parameter::Boolean)
+	end	
+
+- call to super keeps value as a symbol else it would be a string
+
+- values are always validated before they are munged
+
+--- break
+
+keywords: type,custom,resource,automatic,relationship
+
+link: https://docs.puppetlabs.com/guides/custom_types.html#automatic-relationships
+
+- type can specify automatic relationships with other resources
+
+	syntax:
+
+	autorequire(:TYPE) do
+		[ "resource-name", "resource-name" ]
+	end
+
+	example:
+	
+	autorequire(:file) do
+		[ "/tmp", "/dev" ]
+	end
+
+--- break
+
+keywords: type,custom,resource,pre-run,validation	
+
+link: https://docs.puppetlabs.com/guides/custom_types.html#agent-side-pre-run-resource-validation-puppet-37-and-later
+
+- define pre_run_check method, takes no arguments and should raise Puppet::Error if catalog run should be aborted
+
+	example:
+
+	Puppet::Type.newtype(:thing) do
+		newparam :name, :namevar => true
+
+		def pre_run_check
+			if (rand(6) == 0)
+				raise Puppet::Error, "Puppet roulette failed, no catalog for you!"
+			end
+		end
+	end
+
+--- break
+
+keywords: provider,custom,resource
+
+link: https://docs.puppetlabs.com/guides/custom_types.html#providers
+
+- the type declares the features and what's required to make them work
+
+- providers can either be tested for whether they suffice or then can declare they have the features
+
+- individual properties and parameters in type can declare they require one or more specific features
+  (Puppet will error if those params are used with providers missing those features)
+
+	Puppet::Type.newtype(:NAME) do
+		feature :FEATURE-NAME1, "Description ...", :method => [:METHOD, ... ]
+		feature :FEATURE-NAME2, "Description ..."		
+	
+		/* %w{ .. } - Non-interpolated Array of words, separated by whitespace */	
+		newparam(:NAME, :required_features => %w{FEATURE-NAME1}) do
+			...
+		end
+		
+	end
+
+- method on feature lists one or more moethods that must be defined on provider
+
+- of provider needs to specifically declare that it has that feature
+
+	syntax:
+
+
+	/* this defines a provider for the specified type
+	Puppet::Type.type(:NAME).provider(:PROVIDER-NAME) do
+		has_feature :FEATURE-NAME[, FEATURE-NAME, ..]
+	end
+
+- when you define features on your type, Puppet automatically defines a bunch of class methods on provider
+
+	- feature?: passed feature name, returns true if available or false otherwise
+	- features: returns list of supported features on provider
+	- satisfies?: passed a list of feature will return true if they are all avaiable, false otherwise
+
+- each feature also gets a separate boolean method on provider (ie: feature-name?)
+
+--- break
+
+keywords: provider,custom,resouce
+
+link: https://docs.puppetlabs.com/guides/provider_development.html
+
+- essentially back-ends that implement support for a specific implementation of a given resource
+
+- not all resource types have or need providers
+
+- always associated with a single resource type
+
+- can inherit from a base provider (which is never used alone)
+
+	syntax:
+
+	Puppet::Type.type(:TYPE-NAME).provide(:PROVIDER-NAME, :parrent => Puppet::Provider::Package) do
+		desc "..."
+		...
+	end
+
+- can alse specify another provider as their parent, if provider of same resource type
+
+	example:
+
+	Puppet::Type.type(:package).provide(:apt, :parent => :dpkg, :source => :dpkg) do
+		...
+	end
+
+- providers can also specify a provider of any resource as their parent using 
+  Puppet::Type.type(<NAME>).provider(<NAME>) methods to locate the provider
+
+--- break
+
+keywords: provider,custom,resouce,suitablity
+
+link: https://docs.puppetlabs.com/guides/provider_development.html
+
+- where a provider will be functional, called suitable
+
+- puppet providers include some helpful class-level methods you can use to both document and
+  declare how to determine whether a given provider is suitable
+
+	syntax:
+
+	commands :NAME => "/path/to/binary"
+
+	example:
+
+	commands :dpkg => "/usr/bin/dpkg"
+
+- method commands sets up class and instance methods with name provided that call specified binary
+
+- can compare facts, test for existence of a file, check for a "feature" such as a libary,
+  or test whether a given value is true of false
+
+	syntax:
+
+	confine :[exists|true|false] => "test"
+
+	example:
+
+	confine :exists => "/etc/debian_release"
+	confine :true => '/^10\.[0-4]/.match(product_version)
+
+- to test Facter values just use name of fact
+
+	example:
+
+	confine :operatingsystem => [:debian, :solaris]
+
+- case doesn't matter in tests
+
+- to test a feature, as defined in lib/puppet/feature/*.rb
+
+	example:
+
+	confine :feature => :posix
+
+--- break
+
+keywords: provider,custom,resouce,default
+
+link: https://docs.puppetlabs.com/guides/provider_development.html
+
+- puppet does what it can to choose an appropriate default provider for each type
+
+- done by a single provider declaring that it is the default for a given set of facts
+
+	example:
+
+	defaultfor :operatingsystem => :debian

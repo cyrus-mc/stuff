@@ -944,3 +944,355 @@ syntax:
 example:
 
 	lxc-console -n debian
+
+--- break
+
+keywords: cgroups,introduction
+
+links: https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Resource_Management_Guide/index.html#idm93005552
+
+- allow you to allocate resources (CPU, system memory, network bandwidth or combination) among user-defined
+  group of tasks
+
+- you can monitor cgroup, deny cgroup access to certain resources and even reconfigure them dynamically
+
+- cgconfig (control group config) service can be configured to start up at boot and reestablish your
+  predefined cgroups
+
+- organized hierarchically and child groups inherit some attributes of their parents 
+
+- multiple separate hierarchies are needed because each one is attached to one or more subsystems
+
+--- break
+
+keywords: cgroups,subsystems,available
+
+link: https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Resource_Management_Guide/index.html#sec-How_Control_Groups_Are_Organized
+
+- ten cgroup subsystems available in RH6
+
+	- blkio : I/O access to and from block devices
+	- cpu: uses scheduler to provide cgroup task access to CPU
+	- cpuacct: generates automatic reports on CPU resources
+	- cpuset: assigns individual CPUs and memory nodes
+	- devices: allow or deny access to devices
+	- freezer: suspends or resumes tasks
+	- memory: sets limits on memory and generates automatic reports on memory resources
+	- net_cls: tags network packets with a class identifier that allow Linux traffic controller (tc)
+		   to identify packets
+	- net_prio: dynamically set priority of network traffic per NIC
+	- ns: namespace subsystem
+
+- lssubsys utility will list all available subsystems as well as where they are attached
+
+--- break
+
+keywords: cgroup,task,subsystem,relationship,hierarchies
+
+link: https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Resource_Management_Guide/index.html#sec-Relationships_Between_Subsystems_Hierarchies_Control_Groups_and_Tasks
+
+Rule 1:
+
+- single hierarchy can have one or more subsystems attached to it 
+
+Rule 2:
+
+- any single subsystem cannot be attached to more than one hierarchy if one of those hierarchies
+  has a different subsystem attached to it already
+
+Rule 3:
+
+- by default all tasks are in default cgroup (root cgroup)
+
+- for any single hierarchy each task on system can bea  member of exactly one cgroup in that hierarchy
+
+- single tasks may be in multiple groups, as long as each of those cgroups is in a different hierarchy
+
+- as soon as task becomes member of second cgroup in same hierarchy it is removed from the first cgroup in that
+  hierarchy
+
+Rule 4:
+
+- child task automatically inherits the cgroup membership of its parent 
+
+- can be moved to different cgroup as needed
+
+- once forked, parent and child processes are completely independent
+
+--- break:
+
+keywords: cgroups,cgconfig
+
+link: https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Resource_Management_Guide/index.html#ch-Using_Control_Groups
+
+- cgroups and the subsystems can be manipulated using shell commands and utilities (libcgroup package)
+
+- cgconfig service create hierarchies, attach subsystems and manage cgroups within those hierarchies
+
+- configuration file is /etc/cgconfig.conf
+
+- default config creates and mounts an individual hierarchy for each subsystem and attaches the subsystems to
+  these hierarchies 
+
+- config contains two major types of entries
+
+	mount: create and mount hierarchies as virtual file systems and attach subsystems to those hierarchies
+
+	syntax:
+
+	mount {
+
+		subsystem = /cgroup/hierarchy;
+	}
+
+	example:
+
+	mount {
+		cpuset = /cgroup/cpuset;
+		cpu = /cgroup/cpu;
+		...
+	}
+
+
+	syntax:
+
+	mount -t cgroup -o subsystem[,subsystem] IDENTIFYING-STRING /mount-point
+
+	example:
+
+	mount -t cgroup -o cpuset cpu-hier  /cgroup/cpuset
+
+	group: create cgroups and set subsystem parameters
+
+	syntax:
+
+	group <name> {
+		[<permissions>]
+		<controller> {
+			<param name> = <param value>;
+			...
+		}
+		...
+	}
+
+	example:
+
+	group daemons/sql {
+		perm {
+			task {
+				uid = root;
+				gid = sqladmin;
+			} admin {
+				uid = root;
+				gid = root;
+			}
+		}
+		cpuset {
+			cpuset.mems = 0;
+			cpuset.cpus = 0;
+		}
+	}
+
+
+--- break
+
+keywords: cgroups,create,control,group,cgcreate
+
+link: https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Resource_Management_Guide/index.html#sec-Creating_Cgroups
+
+- use cgcreate command to create cgroups
+
+syntax:
+
+	cgcreate -t uid:gid -a uid:gid -g subsystems:path
+
+	-t : uid and gid to own tasks pseudo file (can add tasks to group)
+	-a : uid and gid to own all files but tasks
+	-g : hierarchy in which cgroup should be created
+
+example: 
+
+
+	cgcreate -g cpu,net_cls:/test-subgroup
+
+--- break
+
+keywords: cgroups,remove,control,group,cgdelete
+	 
+link: https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Resource_Management_Guide/index.html#sec-Removing_Cgroups
+
+- use cgdelete to remove cgroup
+
+syntax:
+
+	cgdelete subsystems:path
+
+example:
+
+	cgdelete cpu,net_cls:/test-subgroup
+
+- when delete all its tasks move to its parent group
+
+--- break
+
+keywords: cgroups,set,parameter,cgset
+
+link: https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Resource_Management_Guide/index.html#Setting_Parameters 
+
+- use cgset to set subsystem parameters
+
+syntax:
+
+	cgset -r parameter=value path_to_cgroup
+
+example:
+
+	# cpuset is mounted to /cgroup/cpu_and_mem and cgroup group1 exists
+	# /cgroup/cpu_and_mem/group1
+
+	cgset -r cpuset.cpus=0-1 group1
+
+
+	# copy parameters from one group to another
+	cgset --copy-from group1/ group2/
+
+- values you can set might depend on values set higher in a particular hierarchy (if parent is
+  restricted to CPU1 you can't set child to use CPU 0 and 1)
+
+- alternative to cgset is to write file directly to pseudo-file on the cgroup
+
+--- break
+
+keywords: cgroups,move,process,cgclassify
+
+link: https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Resource_Management_Guide/index.html#sec-Moving_a_Process_to_a_Control_Group
+
+- use cgclassify to move process into a cgroup
+
+syntax:
+
+	cgclassify -g subsystems:path_to_cgroup pidlist
+
+example:
+
+	cgclassify -g cpu,memory:group1 1701
+
+- add --sticky option before pid to keep any child processes in same cgroup (if omitted and cgred
+  running child processes will be allocated based on cgrules.conf file)
+
+--- break
+
+keywords: cgroups,cgred,service
+
+link: https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Resource_Management_Guide/index.html#The_cgred_Service
+
+- service that moves tasks into cgroups according to /etc/cgrules.conf
+
+- entries in cgrules.conf take one of the following two forms:
+
+syntax:
+
+	user subsystems control_group
+
+	user:command subsystems control_group
+
+example:
+
+	maria		devices		/usergroup/staff
+
+	maria:ftp	devices		/usergroup/staff/ftp
+
+- @ indicates a group
+
+- * represents all
+
+- % represents an item the same as the item in line above
+
+--- break
+
+keywords: cgropu,start,process,cgexec
+
+link: https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Resource_Management_Guide/index.html#Starting_a_Process
+
+- lauch processes in a cgroup by running cgexec
+
+syntax:
+
+	cgexec -g subsystems:path_to_cgroup command arguments
+
+example:
+
+	cgexec -g cpu:group1 firefox http://www.redhat.com
+
+- option --sticky will keep any child processes in same cgroup
+
+- new process inherits group of its parent process, therefore alternative to cgexec is to
+  move shell process to that group and then lauch process
+
+example:
+
+	echo $$ > /cgroup/cpu_and_mem/group1/tasks
+	firefox
+
+	sh -c "echo \$$ > /cgroup/cpu_and_mem/group1/tasks && firefox"
+
+--- break
+
+keywords: cgroup,start,service
+
+link: https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Resource_Management_Guide/index.html#Starting_a_Service
+
+- edit file in /etc/sysconfig and add CGROUP_DAEMON entry
+
+example: CGROUP_DAEMON="cpuset:group1"
+
+--- break
+
+keywords: cgroup,cgsnapshot
+
+link: https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Resource_Management_Guide/index.html#sec-cgsnapshot
+
+- use cgsnapshot to generate cgconfig.conf from current cgroup configuration
+
+example:
+
+	cgsnapshot -s [-f outputfile] [subsystem]
+
+	-s : ignore all warnings in output file caused by parameters not being defined in
+	     blacklist or whitelist
+
+- specifying subsystem generates output for just that subsystem
+
+--- break
+
+keywords: cgroups,obtaining,information
+
+link: https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Resource_Management_Guide/index.html#sec-Obtaining_Information_About_Control_Groups
+
+- find cgroup process belongs to:
+
+	ps -O cgroup
+
+	cat /proc/PID/cgroup
+
+- finding a subsystem
+
+	cat /proc/cgroups
+
+	lssubsys -m subsystems
+
+- finding hierarchies
+
+	tree /cgroup
+
+- finding control groups
+
+	lscgroup [controller:path]
+
+- displaying parameters of cgroups
+
+	cgget -r parameter list_of_cgroups
+
+	cgget -r cpuset.cpus -r memory.limit_in_bytes group1 group2
+
+- to clear entire cgroup file system use cgclear command
