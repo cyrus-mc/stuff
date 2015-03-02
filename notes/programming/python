@@ -1,0 +1,586 @@
+--- break
+
+keywords: string,sequence
+
+link: 
+
+- strings are immutable
+
+syntax:
+
+	/* create string variable */
+	str-var = 'string'
+
+	/* access element of string */
+	element = str-var[index]
+
+	/* get length of string */
+	len(str-var)
+
+	/* traversal of string (uses iterator) */
+	for char in str-var:
+		print char
+
+	/* string slice (end-index character not included in slice) */
+	str-var[start-index:end-index]
+
+- some useful string methods are
+
+	* str.upper()
+	* str.find(char)
+--- break
+
+keywords: file,open,read
+
+link: learn_python-the_hard_way.pdf,page136
+
+- open function
+
+syntax: 
+	
+	open(FILENAME[,mode[,buffering]])
+
+- returns an object of the file type
+
+- methods of File objects
+
+syntax:
+
+	close
+	read([size]) : returns a string object
+	readline 
+	truncate
+	write(str)
+
+--- break
+
+keywords: functions,def
+
+link: learn_python-the_hard_way.pdf,page154
+
+syntax:
+
+	def FUNC-NAME(*args):
+		arg1, arg2 = args
+		...
+		return VALUE
+
+	def FUNC-NAME(arg1, arg2):
+		print "arg1: %s, arg2: %s" % (arg1, arg2)
+		...
+		return VALUE
+
+- *args packs supplied variables into a list
+
+- all variables found outside of innermost scope (ie: outside the function scope) are read-only
+  and writing to such variable will createa a new local variable in innermost scope
+
+--- break
+
+keywords: if,statement
+
+link: learn_python-the_hard_way.pdf,page220
+
+syntax:
+
+	if operand1 OPERATOR operand2:
+		...
+
+example:
+	
+	people = 20
+	cats = 30
+
+	if people < cats:
+		print "Too many cats. This world is doomed!"
+
+--- break
+
+keywords: if,else,elif,statement
+
+link: learn_python-the_hard_way.pdf,page226
+
+syntax:
+
+	if STATEMENT:
+		...
+	elif STATEMENT:
+		...
+	else:
+		...
+
+--- break
+
+keywords: list,data,structure
+
+link: learn_python-the_hard_way.pdf,page235,page248
+
+- lists are mutable
+
+syntax:
+
+	variable = [ 'item1', 'item2', 'item3' ]
+	variable = [ item1, item2, item3 ]
+
+	/* nested list */
+	list-var = [ item1, item2, [ item3, item4 ] ]
+
+	/* traversing a list */
+	for element in list-var:
+		print element
+
+- slice operator also works on lists
+
+- some useful list methods are:
+
+	* list.append(var)
+	* list.sort()
+	* list.pop(index)      - remove based on index
+	* list.remove(element) - remove based on element value
+	* list(string)	       - return list from string
+	* str.split(delimiter) - split string based on delimiter and return list
+
+- when you pass a list to a function, function gets a reference to the list
+
+- it is important to distinguish between operations that modify lists and operations
+  that create new lists
+
+--- break
+
+keywords: for,loop,statement
+
+link: learn_python-the_hard_way.pdf,page237
+
+syntax:
+
+	for VAR in LIST:
+		...
+
+example:
+
+	fruits = [ 'apples', 'oranges', 'pears' ]
+
+	for fruit in fruits:
+		print "A fruit of type: %s" % fruit
+
+
+	for i in range(0, 6):
+		print i
+
+--- break
+
+keywords: while,loop,statement
+
+link: learn_python-the_hard_way.pdf,page241
+
+syntax:
+
+	while EXPRESSION:
+		...
+
+example:
+
+	while i < 6:
+		print "At the top is is %d" %i
+
+--- break
+
+keywords: keywords
+
+link: learn_python-the_hard_way.pdf,page268
+
+- the following keywords exist
+
+	- and
+	- del : deletes objects
+	- from : for importing a specific variable, class or a function from
+		 a module
+	- not
+	- while
+	- as : if we want to give a module a different alias
+	- elif
+	- global : access variables defined outside functions
+	- or
+	- with
+	- assert
+	- else
+	- if
+	- pass : does nothing
+	- yield : used with generators
+	- break : interrupt the (loop) cycle
+	- except : catches the exception and executes code
+	- import : import other modules into a python script
+	- print
+	- class
+	- exec
+	- in
+	- raise : create a user defined exception
+	- continue : interrupt current cycle but don't exit loop
+	- finally : always executed in the end (used to clean up resources)
+	- is : tests for object identity
+	- return
+	- def
+	- for
+	- lamba : creates a new anonymous function
+	- try : specifies exception handlers
+
+--- break
+
+keywords: data,types
+
+link: learn_python-the_hard_way.pdf,page270
+
+- following data types exist in python
+
+	* True
+	* False
+	* None
+	* strings
+	* numbers
+	* floats
+	* lists
+
+--- break
+
+keywords: dictionary,dics,data,structure,hash
+
+link: learn_python-the_hard_way.pdf,page286
+
+syntax:
+
+	variable = { 'key1': 'value1', 'key2': 'value2' }
+	variable['key3'] = value3
+
+example:
+
+	stuff = { 'name': 'Zed', 'age': 36, 'height': 6*12+2 }
+
+- can delete from dictionary using del keyword
+
+- method items() returns list of key value pairs
+
+- method get('key', default) returns value for key or default
+
+- len function returns number of key-value pairs
+
+- in operator tells you whether somethin appears as a key
+
+- values() method returns the values as a list
+
+--- break
+
+keywords: classes
+
+link: https://docs.python.org/2/tutorial/classes.html#class-definition-syntax
+
+syntax:
+
+	class ClassName:
+
+		/* init method, invoked when an object is instantiated */
+		def __init__(self, arg1, arg2, ...)
+			self.var1 = arg1
+			self.var2 = arg2
+
+		<statement-1>
+		.
+		.
+		.
+		<statement-N>
+
+		/* return string representation of an object */
+		def __str__(self):
+			...
+
+		/* overload + operator */
+		def __add__(self,other):
+			...	
+
+- when class definition is entered, a new namespace is created
+
+- when class definition is left (i.e: ended) a class object is created, original local scope
+  is reinstated and class object is bound here (to namespace) to the class name given
+
+- operator overloading: https://docs.python.org/2/reference/datamodel.html#specialnames
+
+--- break
+
+keywords: class,object
+
+link: https://docs.python.org/2/tutorial/classes.html#class-objects
+
+- class objects support two kinds of operations: attribute references and instantiation
+
+syntax:
+
+	/* attribute reference */
+	obj.name
+
+	/* instantiation */
+	x = ClassName()
+
+- instantiation creates a new instance object
+
+--- break
+
+keywords: instance,object
+
+link: https://docs.python.org/2/tutorial/classes.html#instance-objects
+
+- only operations understood by instance objects are attribute references (data attributes and
+  methods)
+
+- data attributes correspond to instance attributes (need not be declared, spring into existence
+  when they are first assigned to) 
+
+- other kind of instance attribute reference is a method, a method is a function that belongs to
+  an object
+
+--- break
+
+keywords: method,object,classes
+
+link: https://docs.python.org/2/tutorial/classes.html#method-objects
+
+syntax:
+
+	instanceObject.method()
+
+- usually method is called right after it is bound
+
+- not necessary to call a method right away, can be stored and called at a later time
+
+syntax
+
+	/* equivalent to Class.function(instanceObject) */
+	variable = instanceObject.method
+	printf variable()
+
+- object is passed as first argument of function for methods 
+
+
+--- break
+
+keywords: class,instance,variables,classes
+
+link: https://docs.python.org/2/tutorial/classes.html#class-and-instance-variables
+
+- instance variables are data unique to each instance
+
+- class variables are attributes and methods shared by all instances of the class
+
+syntax:
+
+	/* old style class */
+	class ClassName:
+
+		class-variable = value
+
+		def __init__(self,value):
+			self.instance-variable = valu3
+
+	/* new style class */
+	class ClassName(object):
+		...
+
+--- break
+
+keywords: inheritance,classes
+
+link: https://docs.python.org/2/tutorial/classes.html#inheritance
+
+syntax:
+
+	class DerivedClassName(BaseClassName):
+		<statement-1>
+		..
+		..
+		<statement-N>
+
+- BaseClassName must be defined in scope containing derived class definition
+
+syntax:
+
+	class DerivedClassName(modname.BaseClassName):
+		...
+
+- derived classes may override methods of their base classes
+
+- because methods have no special privileges when calling other methods of the same object,
+  a method of a base class that calls another method defined in same base class may end up
+  calling a method of a derived class that overrides it
+
+- an overriding method in derived class may in fact want to extend rather than simply replace
+  the base class method of same name
+
+syntax:
+
+	class DerivedClassName(BaseClassName):
+		def __init__(self, arg1):
+			"""Class constructor"""
+
+			/* call super to call parent method */
+			super(DerivedClassName, self).__init__(arg1)
+
+- python has two built-in functions that work with inheritance
+
+syntax:
+
+	/* True only if obj.__class__ is int or some class derived from int */
+	isinstance(obj, int)
+
+	/* True since bool is a subclass of int */
+	issubclass(bool, int)
+
+--- break
+
+keywords: multiple,inheritance,classes
+
+link: https://docs.python.org/2/tutorial/classes.html#multiple-inheritance
+
+syntax:
+
+	class DerivedClassName(Base1, Base2, Base3, ...):
+		<statement-1>
+		..
+		..
+		<statement-N>
+
+--- break
+
+keywords: private,variables,class-local,references,classes
+
+link: https://docs.python.org/2/tutorial/classes.html#private-variables-and-class-local-references
+
+- private instance variables that cannot be accessed except from inside an object are not
+  supported by python
+
+- convention is used to support this, prefix an underscore to each variable you want to be private
+
+- any identifier of form __variable (two prefixes) is textually replaced with _classname__variable
+
+--- break
+
+keywords: iterators,classes
+
+link: https://docs.python.org/2/tutorial/classes.html#iterators
+
+- most container objects can be looped over using a for statement
+
+- for statement calls iter() on container object, which returns an iterator object that defines
+  the method next() which accesses elements in the container one at a time
+
+- when no more elements, next() raises a StopIteration exception
+
+example:
+
+	class Reverse:
+		"""Iterator for looping over a sequence backwards."""
+		def __init__(self,data):
+			self.data = data
+			self.index = len(data)
+
+		/* define __iter__() method which returns object with a next() method  */
+		def __iter__(self):
+			return self
+
+		def next(self):
+			if self.indx == 0:
+				raise StopIteration
+			self.index = self.index - 1	
+			return self.data[self.index]
+
+--- break
+
+keywords: tuples,sequences,data,type
+
+link: https://docs.python.org/2/tutorial/datastructures.html#tuples-and-sequences
+
+- a tuple consists of a number of values separated by commans
+
+syntax:
+
+	tuple = ( value1, [ value2, value3 ] )
+
+	/* empty tuple */
+	tuple = ()
+
+	t = tuple(string|list|tuple)
+
+	/* nested tuple */
+	tuple = tuple1, tuple2
+
+	/* unpacking a tuple */
+	x, y, z = tuple
+
+- tuples are immutable and usually contain an heterogenous sequence of elements that are accessed
+  via unpacking or indexing
+
+- lists are mutable and their elements are usually homogeneous and are accessed by iterating over
+  the list
+
+- most list operators also work on tuples
+
+- tuple assignment
+
+syntax:
+
+	a, b = b, a
+
+- left side is tuple of variables, right side is tuple of expressions (right side are evaluated
+  before any assignments)
+
+- right side can be any kind of sequence (string, list or tuple)
+
+- functions can take a variable number of arguments (*gathers arguments into a tuple)
+
+syntax:
+
+	def func(*args):
+		arg1[,arg2,..] = args
+
+- complement of gather is scatter (sequence of values you want to pass to a function as multiple
+  arguments), use the * operator
+
+syntax:
+
+	funcName(*tuple)
+--- break
+
+keywords: alias,object
+
+- if a variable refers to an object and you assign it to another variable, then both variables
+  refer to the same object
+
+example:
+
+	a = [1, 2, 3]
+	b = a
+	b is a	# returns True
+
+- the association of a variable with an object is called a reference
+
+--- break
+
+keywords: global,variables
+
+link: think_python.pdf,page130
+
+- global variables can be accessed from any function
+
+- if you assign to global variable in function a local variable is created keeping global intact
+
+- to reassign a global variable inside a function you have to declare the global variable before
+  you use it
+
+syntax:
+
+	global-var = value
+
+	def funcName():
+		global global-var
+		global-var = new-value
+
+- you can add, remove and replace elements of a global list or dictionary without declaring it 
+  global, but you can't reassign the variable
+
