@@ -545,6 +545,7 @@ syntax:
 syntax:
 
 	funcName(*tuple)
+
 --- break
 
 keywords: alias,object
