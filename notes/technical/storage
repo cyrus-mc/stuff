@@ -1,0 +1,74 @@
+--- break
+
+keywords: transfer,rate,throughput,bandwidth
+
+link: http://storageswiss.com/2011/08/05/what-are-iops-and-why-should-you-care/
+
+- transfer rates: 
+
+	(throughput, bandwidth) are determined by sequential reads and writes, or
+  	how fast data can be transferred from contiguous storage locations on disk
+
+	amount of data that can be pushed through a common point in the data path in a given
+	time
+
+- measured in MB/s
+
+--- break
+
+keywords: iops,input,output
+
+link: http://storageswiss.com/2011/08/05/what-are-iops-and-why-should-you-care/
+
+- IOPS
+
+	refer to maximum number of reads and writes to non-contiguous storage locations
+
+	aggregate metric, a measure of the total number of storage transactions being processed
+	through a system or a single storage port every second
+
+- measured as an integer and dominated by seak time (time it takes for a disk to position its
+  read/write heads over the correct location) 
+
+- calculation of 'raw IOPS'
+
+	IOPS = 1 / (Avg Seek Time + Avg Latency)
+
+- alternatively use rule of thumb
+
+	* 180 IOPS for 15k RPM drive
+	* 120 IOPS for 10k RPM drive
+	* 80 IOPS for 7500 RPM drive
+	* 40 IOPS for 5400 RPM drive
+
+- to get raw IOPS for storage array, simply multiply individual disk IOPS by number of spindles
+
+--- break
+
+keywords: latency
+
+link: http://storageswiss.com/2013/12/10/what-is-latency-and-how-is-it-different-from-iops/
+
+- transaction
+
+	requests for data made by servers and the process of finding and accessing the blocks
+	of data out of the storage systems to fulfill those requests
+
+- latency
+
+	measure of time required for a sub-system or a component in that sub-system to process
+	a single storage transaction or data request
+
+- refers to how long it takes for a single data request to be received and the right data found
+  and accessed from storage media
+
+example:
+
+	- in a disk drive, read latency is time required for controller to find data blocks and
+	  place the heads over those blocks (including time needed to spin the disk platters) to
+	  begin transfer process
+
+- primary factor in both IOPS and throughput calculations
+
+- its impact on storage performance is fundamental, so reducing latency will universally improve
+  performance

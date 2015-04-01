@@ -1,0 +1,226 @@
+--- break
+
+keywords: master,server,install
+
+link: https://docs.puppetlabs.com/guides/install_puppet/install_el.html 
+
+- enable puppet labs repository
+
+	rpm -ivh http://yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm
+
+- install necessary packages
+
+	yum install puppet-server
+
+- init script is /etc/init.d/puppetmaster
+
+--- break
+
+keywords: master,server,post-install,tasks,certificate
+
+link: https://docs.puppetlabs.com/guides/install_puppet/post_install.html
+
+- create puppet master's certificate with every possible DNS name
+
+- make sure DNS resolves puppet master (or its load balancer)
+
+- set dns_alt_names to comma-separated list of each hostname master should be allowed to use
+
+[main]
+	dns_alt_names = puppet,puppet.example.com,puppetmaster,...
+
+- if only puppet master or it will be acting as the CA server run following to create CA
+  certificates
+
+	puppet master --verbose --no-daemonize
+
+- for non-CA masters you have two options
+
+	# run on CA server and manually copy certificate to new master (cert, key, public,
+	# CA certificate and CRL)
+	puppet cert generate <NAME> --dns_alt_names=<NAME1>,<NAME2>,... 
+
+- or
+
+	# request certificate on the master
+	puppet agent --test --ca_server=<SERVER>
+
+	# sign certificate on CA server
+	puppet cert --allow-dns-alt-names sign <NAME>
+
+	# retrieve cert on master
+	puppet agent --test --ca_server=<SERVER>
+
+--- break
+
+keywords: master,server,directory,config,environments
+
+link: https://docs.puppetlabs.com/puppet/latest/reference/environments.html
+
+- environments are isolated groups of puppet agent nodes 
+
+- master can serve each environment with completely different main manifests and modulepaths
+
+- assign agent nodes to environments using either agent config file or an external node classifier
+
+- $environment variable is available within manfiest files
+
+- directory environments are created simply be adding a new directory of config data
+
+- config environments are being deprecated in favor of directory environments
+
+--- break
+
+keywords: master,server,directory,environment
+
+link: https://docs.puppetlabs.com/puppet/latest/reference/environments_configuring.html
+
+- enable by setting following in master's puppet.conf ([main] or [master] section)
+
+	environmentpath = $confdir/environments
+
+- additional settings are
+
+	basemodulepath : global modules that should be available in all environments
+	default_manifest: default per-environment manifest or global manifest used by all
+
+- must have a directory environment for every environment that any nodes are assigned to
+  
+- environment directory should contain modules and manifests directory
+
+- each environment may contain an environment.conf file that can override several settings
+
+- the following five settings in puppet.conf configure behaviour of directory environments
+
+	environmentpath : list of directories where puppet will look for environments
+
+	basemodulepath : list directories of global modules that all environments can access
+
+	default_manifest : specifies main manifest for any environment that does set a manifest in
+			   environment.conf (default value is ./manifests, i.e: environments own
+			   manifest directory)
+
+	disable_per_environment_manifest : lets you specify that all environments should use shared
+					   manifest
+
+	environment_timeout : sets how often puppet will refresh info about environments
+
+--- break
+
+keywords: master,server,passenger,rack
+
+link: https://docs.puppetlabs.com/guides/passenger.html
+
+- passenger (AKA mod_rails / mod_rack) is apache module which lets you run Rails or Rack applications
+
+- install necessary packages
+
+	yum install httpd httpd-devel mod_ssl ruby-devel rubygems gcc
+	
+	gem install rack passenger
+
+	passenger-install-apache2-module
+
+- install puppet master Rack application by creating a directory for it and copying config.ru 
+	
+	mkdir -p /usr/share/puppet/rack/puppetmasterd
+
+	mkdir /usr/share/puppet/rack/puppetmasterd/{public,tmp}
+
+	cp /usr/share/puppet/ext/rack/config.ru /usr/share/puppet/rack/pupetmasterd
+
+	chown puppet:puppet /usr/share/puppet/rack/puppetmasterd/config.ru
+
+- config.ru tells Rack hwo to spawn puppet master processes
+
+- create and enable puppet master virtual host
+
+	cp /usr/share/puppet/ext/puppetmaster.conf /etc/httpd/conf.d
+
+- edit vhost file accordingly
+
+- agent node makes request to puppet master, mod_ssl performs verification of certificate and 
+  passes this to puppet master via environment variables (HTTP_X_CLIENT_DN / subject DN  and 
+  HTTP_X_CLIENT_VERIFY / verification status)
+
+--- break
+
+keywords:  master,server,multiple,load,balancing
+
+link: https://docs.puppetlabs.com/guides/scaling_multiple_masters.html#distributing-agent-load
+
+- option 1: statically designate servers on agent nodes
+
+- option 2: use round-robin DNS
+
+- option 3: use a load balancer
+
+- option 4: DNS SRV records
+
+--- break
+
+keywords: master,server,multiple,load,balance,dns,srv
+
+link: https://docs.puppetlabs.com/guides/scaling_multiple_masters.html#option-4-dns-srv-records
+
+- new in 3.0 so all infrastructure must be on 3.0 or newer
+
+- edit node puppet.conf and replace server with srv_domain
+
+	[main]
+	  use_srv_records = true
+	  srv_domain = DOMAIN
+
+- will lookup SRV record at _x-puppet._tcp.DOMAIN
+
+- SRV record format, where priority and weight allow you to balance the traffic
+
+	_service._proto.name. TTL class SRV priority weight port target
+
+--- break
+
+keywords: master,server,multiple,load,balance,certificate,authority,dns,srv
+
+link: https://docs.puppetlabs.com/guides/scaling_multiple_masters.html#centralize-the-certificate-authority
+
+- certificate authority functions should be delgated to a single server reachable at a unique
+  hostname other than (or in addition to) puppet
+
+- option 1 : direct agent nodes to CA master (configured via ca_server setting in puppet.conf)
+
+- option 2: DNS SRV records at _x-puppet-ca._tcp.$srv_domain
+
+--- break
+
+keywords: master,server,multiple,load,balance,certificate,authority,proxy
+
+link: https://docs.puppetlabs.com/guides/scaling_multiple_masters.html#option-2-proxy-certificate-traffic
+
+- if nodes don't have direct connectivity to CA you can config web server on masters to proxy all
+  certificate-related traffic to designated CA master
+
+- all certificate related URLs begin with /<NAME-OF-ENVIRONMENT>/certificate
+
+- apache vhost configuration
+
+	SSLProxyEngine On
+	# proxy all requests
+	ProxyPassMatch ^/([^/]+/certificate.*)$ https://puppetca.example.com:8140/$1
+
+- if PassengerHighPerformance On you will need to disable it for the CA routes since it interferes
+  with certain modules (mod_proxy being one of them)
+
+	# disable for specific location
+	<Location ~ "/[^/]+/certificate">
+		PassengerHighPerformance off
+	</Location>
+
+- CA master must allow nodes to download CRL via proxy, without authentication (cert request and
+  retrieval of signed certificates are allowed by default, but not CRLs), on master add following to
+  auth.conf
+
+	path /certificate_revocation_list
+	auth any
+	method find
+	allow *
+
