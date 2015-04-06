@@ -224,3 +224,215 @@ link: https://docs.puppetlabs.com/guides/scaling_multiple_masters.html#option-2-
 	method find
 	allow *
 
+--- break
+
+keywords: hiera,overview
+
+link: https://docs.puppetlabs.com/hiera/1/
+
+- key/value lookup tool for configuration data
+
+- keeps site-specific data out of your manifests
+
+- easier to configure your own nodes: default data with multiple levels of overrides is easy
+
+- easier to re-use public modules, don't edit code, just put the necessary data in Hiera
+
+- avoiding repetition (write common data for most nodes, override some values)
+
+--- break
+
+keywords: hiera,install
+
+link: https://docs.puppetlabs.com/hiera/1/installing.html
+
+- Puppet 3 or later Hiera installed by default
+
+- install it on puppet masters, optional and uncessary on agent nodes (unless standalone)
+
+- install hiera package
+
+	yum install hiera hiera-puppet
+
+-- break
+
+keywords: hiera,config
+
+link: https://docs.puppetlabs.com/hiera/1/configuring.html
+
+- configuration file by default is $confdir/hiera.yaml (can be overriden by hiera_config in 
+  puppet.conf)
+
+- config file must be a YAML hash (valid YAML, but may contain no data)
+
+- each top-level key in hash must be a Ruby symbol with a colon (:) prefix
+
+- default config values if not set are
+
+	:backends: yaml
+	:yaml:
+	  :datadir: /var/lib/hiera
+	:hierarchy: common
+	:logger: console
+
+- :hierarchy : string or array of strings where each string is name of a static or dynamic data
+ 	       source (checked in order, top to bottom)
+
+- :backends :  string or array of strings where each string is name of an available backend (checked
+	       in order)
+
+- :logger : must be name of an available logger, as a strong (puppet overrides default to puppet
+	    regardless of what is in config file)
+
+- :merge_behavior : must be one of the following native (merge top-level keys only), deep (merge
+		    recursively; in event of conflicting keys, lower priority values win), deeper
+		    (merge recursively, in event of conflict, higher priorit values win)
+
+		    ** anything by native requires deep_merge gem **
+
+- :datadir : directory in which to find data source files (for backend :yaml and :json)
+
+- :datasource: puppet class in which to look for data (for backend :puppet)
+
+--- break
+
+keywords: hiera,hierarchies,backend,create,config
+
+link: https://docs.puppetlabs.com/hiera/1/hierarchy.html
+
+- loads :hierarchy key from hiera.yaml config file (must be an array or single string)
+
+- each element in hierarchy must be a string which may or may not include interpolation tokens
+
+- each element in hierarchy resolves to the name of a data source that willb e checked in order
+
+- if data source doesn't exist, will move to next
+
+- if data source exists but does not have piece of data being searched for, move onto next
+  data source
+
+- if value is found
+
+	* in normal (priority) lookup, will stop at first data source with requested data and
+	  return value
+
+	* in array lookup, continue, then return all discovered values as a flattened array (values
+	  higher in hierarchy will be first elements)
+
+	* in hask lookup, continue, then merge all discovered hases and return result, allowing
+	  values from higher in hierarchy to replace values from lower (every found value must be
+	  a hash or will error)
+
+- can specify multiple backends, and they function as a second hierarchy (priority given to first, 
+  will check every level of hierarchy before moving onto second and so forth)
+
+--- break
+
+keywords: hiera,write,data,sources,yaml,json
+
+link: https://docs.puppetlabs.com/hiera/1/data_sources.html
+
+- root object of each YAML data source must be a YAML mapping (hash)
+
+- hiera will treat its top level keys as pieces of data available in the data source
+
+- value for each key can be : hash (mapping), array (sequence), string (quoted scalar or non-boolean
+  unquoted scalar), number (integer or float), boolean 
+
+- string may include any number of interpolation tokens
+
+- example:
+
+	---
+	# array
+	apache-packages:
+	   - apache2
+	   - apache2-common
+	   - apache2-utils
+
+	# string
+	apache-service: apache2
+
+	# interpolated facter variable
+	hosts_entry: "sandbox.%{fqdn}"
+
+	# hash
+	sshd_settings: 
+	   root_allowed: "no"
+	   password_allowed: "yes"
+
+	# alternate hash notation
+	sshd_settings: {root_allowed: "no", password_allowed: "yes"}
+
+	# to return "true" or "false"
+	sshd_settings: {root_allowed: no, password_allowed: yes}
+
+- root object of each JSON data source must be a JSON object (hash)
+
+- hiera data types map to native JSON data types hash (object), array, string, number, boolean
+  (true / false)
+
+- any string may include any number of interpolation tokens
+
+- example:
+
+	{
+		"apache-packages" : [
+		"apache2",
+		"apache2-common",
+		"apache2-utils"
+		],
+
+		"hosts_entry":	"sanbox.%{fqdn}",
+
+		"sshd_settings" : {
+					"root_allowed" : "no",
+					"password_allowed" : "no"
+				  }
+	}
+
+--- break
+
+keywords: hiera,automatic,parameter,lookup
+
+link: https://docs.puppetlabs.com/hiera/1/puppet.html#automatic-parameter-lookup
+
+- puppet will automatically retrieve class parameters from hiera using lookup keys like
+  myclass:paramater_one
+
+example:
+
+	# $parameter_one values gets set when 'myclass' is eventually declared
+	class myclass ($paramter_one = 'default_text) {
+		file { '/tmp/foo':
+			ensure 	=> file,
+			content	=> $parameter_one,
+		}
+	}
+
+- parameters can be set serveral ways (will try each of these ways in order)
+
+	* resource-list declaration/assignment
+	* automatically look up parameters in Hiera using <CLASS NAME>::<PARAM NAME>
+	* if above two don't result in value, use default value from class definition
+	* fail compiliation with error if no value found
+
+- automatic parameter lookup can onlu use priority (no merging) lookup method
+
+- if you need to merge arrays or hashes use hiera_array or hiera_hash functions in body of classes
+
+--- break
+
+keywords: hiera,hiera_include,assign,classes,node
+
+link: https://docs.puppetlabs.com/hiera/1/puppet.html#assigning-classes-to-nodes-with-hiera-hierainclude
+
+- assign classes to nodes with special hiera_include function
+
+- choose a key name to use for your classes (ie: classes)
+
+- in main manifest write line hiera_include('classes') outside any node definition and below any
+  top-scope variables that you might be relying on for Hiera lookups
+
+- create classes keys throughout your Hiera hierarchy (value of each classes should be an array
+  and each value in array should be name of a class) 
