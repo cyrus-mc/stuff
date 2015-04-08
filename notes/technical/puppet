@@ -436,3 +436,115 @@ link: https://docs.puppetlabs.com/hiera/1/puppet.html#assigning-classes-to-nodes
 
 - create classes keys throughout your Hiera hierarchy (value of each classes should be an array
   and each value in array should be name of a class) 
+
+--- break
+
+keywords: r10k,installation,config
+
+link: https://github.com/puppetlabs/r10k
+
+- r10k provides a general purpose toolset for deploying Puppet environments and modules
+
+- implements Puppetfile format and provides native implementation of Puppet dynamic environments
+  (directory environments)
+
+- install using Ruby gems
+
+	gem install r10k
+
+- configure r10k by editing /etc/r10k.yaml and adding following
+
+	# location to use for storing cached Git repos
+	:cachedir: '/var/cache/r10k'
+
+	# a list of git repositories to create
+	:sources:
+	  # this will clone the git repo and instantiate an environment per branch in
+	  # /etc/puppet/environments
+	  :my-org:
+	    # source repository to fetch from
+	    remote: 'git://git-server.site/my-org/repository.git'
+
+	    # where environments will be created for this source (directory will be entirely
+	    # managed by r10k and any contents that r10k did not put there will be removed)
+	    basedir: '/etc/puppet/environments'
+
+	    # prefix environment names with the short name of the given source
+	    # (value can also be a 'string' that becomes the prefix)
+	    prefix: true
+
+- deploy environments using the following command
+
+	r10k deploy environment -p [-v]
+
+--- break
+
+keywords: r10k,puppetfile
+
+link: https://github.com/puppetlabs/r10k/blob/master/doc/puppetfile.mkd
+
+- Puppetfiles are simple Ruby based DSL that specifies a list of modules to install, what version
+  and where to fetch them from (no dependency resolution)
+
+- commands
+
+	r10k puppetfile install		# install/update all modules into ./modules
+
+	r10k puppetfile check		# check syntax
+
+	r10k puppetfile purge		# remove any modules not in file
+
+example:
+
+	moduledir '/etc/puppet/modules'		# where modules are placed (default ./modules)
+
+	# install puppetlabs/apache module from master branch
+	mod 'apache',
+	  :git => 'https://github.com/puppetlabs/puppetlabs-apache.git'
+
+	# install puppetlabs/apache module and track docs_experiment branch
+	mod 'apache',
+	  :git => 'https://github.com/puppetlabs/puppetlabs-apache.git'
+	  :ref => 'docs_experiment'
+
+- versions can also be specified using :tag and :commit
+
+- modules can be installed using the Puppet module tool
+
+example:
+
+	moduledir '/etc/puppet/modules'
+
+	mod 'puppetlabs/apache'			# install latest from forge and keep at that
+
+	mod 'puppetlabs/apache', '0.10.0'	# install version 0.10.0
+
+	mod 'puppetlabs/apache', :latest	# install latest
+
+--- break
+
+keywords: r10k,dynamic,environment,puppetfile
+
+link: https://github.com/puppetlabs/r10k/blob/master/doc/dynamic-environments/master-configuration.mkd
+
+- a deployed environment with a Puppet file will look something like this
+
+	.
+	|-- Puppetfile
+	|-- environment.conf
+	|-- dist
+	|-- site
+	|-- manifests
+	  |-- site.pp
+
+- Puppetfile manages the modules directory
+
+- dist is for internally developed generic modules (roles/profiles in here)
+
+- site for modules deploying custom services
+
+- in environment.conf set the following
+
+	# environment.conf
+	modulepath = site:dist:modules 
+	manifest = manifest		# this is actually the default
