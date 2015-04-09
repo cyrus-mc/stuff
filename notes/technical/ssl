@@ -1,0 +1,30 @@
+--- break
+
+keywords: ssl,connection,handshake
+
+link: https://ssl.trustwave.com/support/support-how-ssl-works.php
+
+- relies on concept of public key cryptography (each party has a public and private key)
+  (info encrypted with a public key can only be decrypted with the private and vice versa)
+
+- the following handshake takes place to establish SSL connection
+
+	* server sends public key to client
+
+	* client validates certificate (not expired, CN valid, CA certificate)
+
+	* client sends public key to server
+
+	* server creates a unique hash and encrypts it using client public key and server
+	  private key and sends this to client
+
+	* client will decrypt hash (this process shows server sent hash and only client is
+	  able to read it)
+
+	* secure channel now established
+
+- public, private keys require you to have the public key of the sender and the private key of
+  recipient (client) to decrypt
+
+--- break
+
