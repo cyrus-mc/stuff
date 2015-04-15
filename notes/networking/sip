@@ -11,13 +11,13 @@ syntax:
 
 	<method (request type)> <URI (address/resource)> <version>	# request
 	
-	<version> <code> <reason phrase>							# response
+	<version> <code> <reason phrase>				# response
 	
 example:
 
-	REGISTER sip:arstechnica.com SIP/2.0 						# request
+	REGISTER sip:arstechnica.com SIP/2.0 				# request
 	
-	SIP/2.0 200 OK												# response
+	SIP/2.0 200 OK							# response 
 
 - then come the headers, which contain vital information (some are mandatory others are optional)
 
@@ -59,13 +59,14 @@ link: http://arstechnica.com/business/2010/01/voip-in-depth-an-introduction-to-t
 - SIP operates hop-by-hop (proxies) so each hop could change transport type (client may receive
   over TCP even if original message was sent over UDP)
   
-- for connection based transports (ex: TCP) state of connections is maintained (save time and resources)
+- for connection based transports (ex: TCP) state of connections is maintained (save time and 
+  resources)
 
 - recommendation is to keep open for 32 seconds after last message but in practice it is application
   defined
   
-- no limit for number of different SIP messages that one can send on a connection therefore two devices
-  such as proxies usually only have one or very few connections between them
+- no limit for number of different SIP messages that one can send on a connection therefore 
+  two devices such as proxies usually only have one or very few connections between them
   
 --- break
 
@@ -80,9 +81,9 @@ link: http://arstechnica.com/business/2010/01/voip-in-depth-an-introduction-to-t
 - if NAT device located between client and server, when client sends REGISTER request the NAT IP
   and PORT will be put in locator server, NAT may expire and calls won't be able to be made
   
-- RFC 5626 created to address, introduces concept of a "flow" that should be maintained by registering
-  client (client sends two empty lines on connection-oriented flow (TCP) and expects to receive
-  from server a single empty line as response)
+- RFC 5626 created to address, introduces concept of a "flow" that should be maintained by 
+  registering client (client sends two empty lines on connection-oriented flow (TCP) and expects 
+  to receive from server a single empty line as response)
   
 - connection-less transports (UDP) client maintains flow by using a STUN server (RFC 5389)
 
