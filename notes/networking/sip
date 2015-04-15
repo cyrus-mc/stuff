@@ -1,0 +1,88 @@
+--- break
+
+keywords: message,structure,request,response,header,body
+link: http://arstechnica.com/business/2010/01/voip-in-depth-an-introduction-to-the-sip-protocol-part-1/
+
+- shares same message structure as HTTP and RTSP
+
+- message is either request or response and start as follows	
+	
+syntax:
+
+	<method (request type)> <URI (address/resource)> <version>	# request
+	
+	<version> <code> <reason phrase>							# response
+	
+example:
+
+	REGISTER sip:arstechnica.com SIP/2.0 						# request
+	
+	SIP/2.0 200 OK												# response
+
+- then come the headers, which contain vital information (some are mandatory others are optional)
+
+- each header has a name, value and optional parameters
+
+example:
+
+		Contact: sip:golad@voxisoft.com;Expires=2000
+
+- some headers can appear multiple times (multiple can be combined to one by separating each value
+  by comma)
+  
+- some headers have a compact form for which header name is shorter (i.e: m intead of Contact)
+
+- next comes empty line and then body of message
+
+- body can be anything but a common use is to encapsulate the media negotiation protocol within
+  the SIP message
+  
+- header Content-Type specifies the type of the message
+
+- header Content-Length is required for UDP not TCP
+		
+--- break
+
+keywords: messages,transport,types
+
+link: http://arstechnica.com/business/2010/01/voip-in-depth-an-introduction-to-the-sip-protocol-part-1/
+
+- by default messages are sent on port 5060 (unencrypted) or 5061 (encrypted)
+
+- can specify a port other than default within the SIP address/resource
+
+- support for both UDP and TCP (but can operate on practically any transport type)
+
+- defines different behavior per transport only when characteristics of specific transport require
+  it to do so (will re-transmit for UDP not for TCP)
+  
+- SIP operates hop-by-hop (proxies) so each hop could change transport type (client may receive
+  over TCP even if original message was sent over UDP)
+  
+- for connection based transports (ex: TCP) state of connections is maintained (save time and resources)
+
+- recommendation is to keep open for 32 seconds after last message but in practice it is application
+  defined
+  
+- no limit for number of different SIP messages that one can send on a connection therefore two devices
+  such as proxies usually only have one or very few connections between them
+  
+--- break
+
+keywords: nat,voip
+
+link: http://arstechnica.com/business/2010/01/voip-in-depth-an-introduction-to-the-sip-protocol-part-1/
+
+- problems with NAT as signaling protocols are minimalistic in terms of traffic
+
+- NAT device will tear down a NAT after a configurable amount of time if it doesn't see traffic
+
+- if NAT device located between client and server, when client sends REGISTER request the NAT IP
+  and PORT will be put in locator server, NAT may expire and calls won't be able to be made
+  
+- RFC 5626 created to address, introduces concept of a "flow" that should be maintained by registering
+  client (client sends two empty lines on connection-oriented flow (TCP) and expects to receive
+  from server a single empty line as response)
+  
+- connection-less transports (UDP) client maintains flow by using a STUN server (RFC 5389)
+
