@@ -1,0 +1,17 @@
+--- break
+
+keywords: as_path,prepend,route,inbound
+link: http://evilrouters.net/2009/03/07/using-as-path-prepending-to-influence-inbound-routing/
+
+- when two or more routes exist to particular prefix, default route to prefer is one with shortest
+  AS Path length
+
+- AS path prepending is probably easiest method one can use to influence inbound routing to your AS
+
+- BGP (unlike EIGRP) doesn't take bandwidth into consideration
+
+- AS Path prepending you artificially lengthen AS Path that you advertise to a neighbor
+
+--- break
+
+
