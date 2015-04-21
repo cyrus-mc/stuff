@@ -10,7 +10,24 @@ link: http://evilrouters.net/2009/03/07/using-as-path-prepending-to-influence-in
 
 - BGP (unlike EIGRP) doesn't take bandwidth into consideration
 
-- AS Path prepending you artificially lengthen AS Path that you advertise to a neighbor
+- AS Path prepending you artificially lengthen AS Path that you advertise to a neighbor (make it
+  seem like route has more hops)
+
+- use route-map (Cisco) applied to (certain) outbound BGP sessions
+
+syntax:
+
+	route-map PREPEND permit 10
+		set as-path prepend AS# AS#
+		router bgp AS
+			neighbor NETWORK route-map PREPEND out
+
+example:
+
+	route-map PREPEND permit 10
+		set as-path prepend 67 67
+		router bgp 67
+			neighbor 172.21.79.9 route-map PREPEND out
 
 --- break
 
