@@ -1,0 +1,66 @@
+--- break
+
+keywords: high,availability,ha
+link: http://support.citrix.com/proddocs/topic/ns-system-10-map/ns-nw-ha-intro-wrppr-con.html
+
+- secondary monitors primary by sending periodic messages (heartbeat or health checks) to
+  primary 
+
+- if check fails, retry for a specified period of time, after which it determines primary isn't
+  functioning 
+
+- after failover all clients must re-establish their connectoins to managed servers, but 
+  the session persistence rules are maintained
+
+--- break
+
+keywords: high,availability,ha,add,remote,node
+link: http://support.citrix.com/proddocs/topic/ns-system-10-map/ns-nw-ha-same-nw-addng-rmt-node-tsk.html
+
+- add a remote appliance by specifying unique ID and NSIP (NetScaler IP) (max # of node IDs is 64)
+
+syntax:
+
+	add ha node <ID> <IPAddress>
+
+example:
+
+	add ha node 1 192.168.1.5
+
+- disable HA monitor on each interface not connect or being used for traffic
+
+syntax:
+	
+	set interface <ifNum> [-haMonitor (ON | OFF)]
+
+- view HA node configuration
+
+syntax:
+
+	show ha node
+
+--- break
+
+keywords: high,availability,ha,disable,enable,node
+link: http://support.citrix.com/proddocs/topic/ns-system-10-map/ns-nw-ha-same-nw-dsblng-enblng-nd-tsk.html
+
+- you can disable or enable only on a secondary node (stops sending heartbeat messages to primary)
+
+sytanx:
+
+	set ha node -hastatus DISABLED|ENABLED
+
+
+--- break
+
+keywords: high,availability,ha,remove,node
+link: http://support.citrix.com/proddocs/topic/ns-system-10-map/ns-nw-ha-rmvng-node-tsk.html
+
+- remove a node (no longer in high availablity configuration)
+
+syntax:
+	
+	rm ha node <ID>
+
+--- break
+
