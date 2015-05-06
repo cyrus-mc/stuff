@@ -1,6 +1,6 @@
 Name:           mcollective
 Version:	2.8.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:	Application server for hosting Ruby code on any capable middleware
 
 License:	ASL 2.0
@@ -35,6 +35,7 @@ ls
 sed -i 's#mcollectived="/usr/sbin/mcollectived"#mcollectived="/opt/puppet/sbin/mcollectived"#g' $RPM_BUILD_DIR/%{name}-%{version}/mcollective.init
 mkdir $RPM_BUILD_ROOT/etc/init.d
 cp $RPM_BUILD_DIR/%{name}-%{version}/mcollective.init $RPM_BUILD_ROOT/etc/init.d/mcollective
+mkdir -p $RPM_BUILD_ROOT/etc/mcollective/ssl/clients
 
 %clean
 # remove the build
@@ -50,6 +51,8 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 /etc/mcollective/discovery-help.erb
 /etc/mcollective/metadata-help.erb
 /etc/mcollective/rpc-help.erb
+/etc/mcollective/ssl
+/etc/mcollective/ssl/clients
 %config /etc/mcollective/client.cfg
 %config /etc/mcollective/facts.yaml
 %config /etc/mcollective/server.cfg

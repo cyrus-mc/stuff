@@ -1,6 +1,6 @@
 Name:           puppet
 Version:	3.7.5
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:	A network tool for managing many disparate systems
 
 License:	ASL 2.0
@@ -59,6 +59,8 @@ cat << __EOF__ > $RPM_BUILD_ROOT/etc/puppet/puppet.conf
     # The default value is '$confdir/localconfig'.
     localconfig = $vardir/localconfig
 __EOF__
+mkdir -p $RPM_BUILD_ROOT/etc/init.d
+cp $RPM_BUILD_DIR/%{name}-%{version}/ext/redhat/client.init $RPM_BUILD_ROOT/etc/init.d/puppet
 
 
 %clean
@@ -73,6 +75,12 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 /opt/puppet
 %config /etc/puppet/auth.conf
 %config /etc/puppet/puppet.conf
+/etc/init.d/puppet
+
+
+%post
+# add puppet init script to system
+chkconfig --add puppet 
 
 
 %changelog
