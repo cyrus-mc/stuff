@@ -1,6 +1,6 @@
 Name:           mcollective
 Version:	2.8.1
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:	Application server for hosting Ruby code on any capable middleware
 
 License:	ASL 2.0
@@ -10,7 +10,7 @@ Group:		System Environment/Base
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 #BuildRequires:
-Requires:	pe-ruby
+Requires:	pe-ruby, pe-ruby-stomp
 AutoReqProv:	no
 
 
