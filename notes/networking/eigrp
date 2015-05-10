@@ -1,0 +1,274 @@
+--- break
+
+keywords: introduction
+link: http://njuniors.blogspot.com/2013/01/eigrp-tutorials.html 
+
+- enhanced interior gateway routing protocol (EIGRP), Cisco-proprietary
+
+- classes routing protocol (sends subnet mask of its interfaces in routing updates)
+
+- uses a complex metric based on bandwidth and delay
+
+- hybrid routing protocol as it has characteristics of both distance-vector and link-state protocols
+
+- support for VLSM (variable length subnet mask) and discontigous networks
+
+- use reliable transport protocol (RTP) for delivery and reception of EIGRP packets
+
+- use best path selection Diffusing Update Algorithm (DUAL), gaurantees loop-free paths and
+  backup paths 
+
+- supports multiple protocols (IPV4, IPV6, AppleTalk and IPX/SPX networks)
+
+- load balancing (supports unequal metric load balancing which allows admins to better distribute
+  traffic flow)
+
+- use metrics composed of bandwidth, delay, reliability and load (default is just bandwidth and
+  delay)
+
+--- break
+
+keywords: protocol,packet,types
+link: http://njuniors.blogspot.com/2013/01/eigrp-tutorials.html
+
+- use five types of packets to communicate
+
+	* hello: used to identify neighbors (periodic multicasts)
+ 	* update: advertise routes (multicasts when something changed)
+	* ack: acknowledge receipt of update (unicast, ack is hello packet with no data)
+	* query: used to find alternate paths when all paths to destination have failed
+	* reply: response to query packets to instruct originator not to recompute the route
+		 because feasible successors exist (unicast)
+
+- every query and reply message sent using RTP so every message is acknowledged using ACK message
+
+--- break
+
+keywords: route,discovery,neighbor
+link: http://njuniors.blogspot.com/2013/01/eigrp-tutorials.html
+
+Discovery process:
+
+  1) router will attempt to establish a neighboring relationship by sending HELLO packet
+     (multicast address 224.0.0.10 is multicast address of EIGRP)
+
+  2) neighboring router will receive HELLO packet and respond with another HELLO packet
+
+  3) neighbor will also send its routing table by UPDATE packets (complete table first time,
+     updates thereafter)
+
+  4) router will ACK information
+
+  5) router will also send UPDATE containing its full routing table 
+
+  6) neighbor ACK information
+
+- both routers have now learned paths of the neighbor and the network is converged
+
+- HELLO message will continue to be sent to indicate router is still alive to its neighbors
+
+- when something changes in network, routers will send only partial updates to routers that 
+  need that info
+
+- HELLO packets are sent as periodic multicast and are not ACK directly
+
+- first HELLO are used to build a list of neighbors; thereafter, HELLO indicates the neighbor is
+  still alive
+
+- to become a neighbor the following conditions must be met
+
+  1) router must hear HELLO packet from a neighbor
+
+  2) EIGRP AS must be the same
+
+  3) K-values must be the same
+
+- builds and maintains three tables
+
+  1) neighor table (directly connected routers)
+
+  2) topology table (all routes learned from each neighbor)
+
+  3) routing table (all best routers from topology table and other routing processes)
+
+--- break
+
+keywords: configure
+link: http://njuniors.blogspot.com/2013/01/eigrp-tutorials.html
+
+- set the autonomous system (AS) number and enable on all interfaces belowing to a network
+
+syntax: 
+
+	router eigrp <AS number>
+	network NETWORK
+
+example:
+
+	router eigrp 1
+	network 192.168.1.0	# EIGRP 1 process on interfaces belonging to 192.168.1.0/24
+
+--- break
+
+keywords: feasible,distance,fd,advertised,ad
+link: http://njuniors.blogspot.com/2013/01/eigrp-tutorials.html
+
+advertised distance (AD): cost from neighbor to destination
+
+feasibe distance (FD): sum of AD plus cost between local router and next hop router
+
+successor: primary route used to reach a destination (kept in routing table, best route to dest)
+
+feasible successor: backup route
+
+- to be a feasible successor the route must have an AD lass than FD of current successor route (this
+  guarantees a loop-free path to destination)
+
+- if route via successor becomes invalid or if a neighbor changes the metric, DUAL checks for
+  feasible successors to destination route, if found use it, avoiding need to recompute the route
+
+- if no suitable feasible successor exists, re-computation must occur to determine the new successor
+
+--- break
+
+keywords: neighbors,view,table
+link: http://njuniors.blogspot.com/2013/01/eigrp-tutorials.html
+
+syntax:
+
+	# view the neighbor table
+	show ip eigrp neighbors
+
+- hold (sec): column is amount of time left before neighbor is considered in "down" status
+
+- uptime: amount of time since adjency was established
+
+- SRRT: smooth round trip timer, average time in ms between transmission of a packet and receipt
+        of ACK
+
+- RTO: retransmission timeout, if multicast ahs failed, use unicast and wait this amount of time for
+       ACK
+
+- Queue count: number of queued packets (usually 0)
+
+- sequence Number: seq number of last update packet received (each update message is given a seq
+                   number and received ACK should have same number)
+
+--- break
+
+keywords: topology,table,view
+link: http://njuniors.blogspot.com/2013/01/eigrp-tutorials.html
+
+- show topology table 
+
+syntax:
+
+	# view the topology table
+	show ip eigrp topology
+
+example:
+
+	show ip eigrp topology
+
+	IP-EIGRP Topology Table for AS 100
+
+	Codes: P - Passive, A - Active, U - Update, Q - Query, R - Reply, r - Reply status
+
+	P 192.168.2.0/24, 1 successors, FD is 28160
+		via Connected, FastEthernet0/1
+	P 192.168.5.0/24, 2 successors, FD is 30720
+		via 192.168.1.2 (30720/28160), FastEthernet0/0
+		via 192.168.2.2 (30720/28160), FastEthernet0/1
+
+- Passive state indicates that route is in quiescent mode, implying route is known to be good and
+  that no activities are taking place with respect to the route
+
+- each route shows number of successor it has
+
+- numbers inside brackets are metric from router to destination and AD of this route (advertised
+  by the neighbor, metric from neighbor to router)
+
+syntax:
+
+	# show all neighbors whether they are feasible successors or not
+	show ip eigrp topology all-links
+
+--- break
+
+keywords: metric,K,values,calculate,view
+link: http://njuniors.blogspot.com/2013/01/eigrp-tutorials.html
+
+- formula to calculate the metric is:
+
+	metric = [K1*bandwidth + (K2*bandwidth)/(256-load) + K3*delay] * [K5/(reliability+K4)]
+
+- by default K1 = 1, K2 = 0, K3 = 1, K4 = 0 and K5 = 0 so
+
+	metric = bandwidth + delay
+
+syntax:
+
+	# view K values
+	show ip protocols 
+
+- bandwidth is defined as the slowest bandwidth in the route to the destination and delay is sum
+  of delays of each link, therefore
+
+	metric = [ 10,000,000 / slowest bandwidth in kbps + sum of delay (usec) / 10 ] * 256
+
+- find bandwidth of each interface using show interfaces (BW will be shown in Kbit)
+
+- delay of outgoing interfaces can also be determined using show interfaces (DLY will be shown in
+  usec), add all the values of the interfaces to the route
+
+- delay is sum of delays of each link
+
+--- break:
+
+keywords: routing,table,view
+link: http://njuniors.blogspot.com/2013/01/eigrp-tutorials.html
+
+syntax:
+
+	# view routing table
+	show ip route
+
+
+example:
+
+	show ip route
+
+	Gateway of last resort is not set
+
+	C   192.168.1.0/24 is directly connected, FastEthernet0/0
+	D   192.168.3.0/24 [90/30720] via 192.168.1.2, 00:00:08, FastEthernet0/0
+	D   192.168.5.0/24 [90/30720] via 192.168.1.2, 00:00:08, FastEthernet0/0
+ 	     		   [90/30720] via 192.168.2.2, 00:00:08, FastEthernet0/1
+
+- routing table has two parameters [90/30720]
+
+- first is administrative distance of EIGRP (default of 90)
+
+- administrative distance is the measure used by Cisco routers to select best path when there are
+  two or more different routes to same destination from two different routing protocols
+
+- directly connect - AD: 0, static - AD: 1, EIGRP - AD: 90, EIGRP summary route - AD: 5,
+  OSPF - AD: 110, RIP - AD: 120
+
+--- break:
+
+keywords: vlsm,variable,length,subnet,mask,discontiguous,auto,summary
+link: http://njuniors.blogspot.com/2013/01/eigrp-tutorials.html
+
+discontiguous networks: networks that have subnets of a major network separated by a different
+			major network
+
+syntax:
+
+	router eigrp 1
+	no auto-summary
+
+- when router advertise its networks it will do so with their subnet mask
+
+- if auto-summary is on and both routers summarize the same network, a collision will happen and 
+  the router will not learn the advertised route
