@@ -1,0 +1,87 @@
+--- break
+
+keywords: nosql,explained
+
+link: https://www.mongodb.com/nosql-explained
+
+- encompasses a wide variety of different database technolgoies developed in response to rise in
+  volume of data, frequency in which data is accessed and performance and processing needs
+
+- RDMS were not designed to cope with scale and agility challenges nor were they built
+  to take advantage of cheap storage and processing power 
+
+--- break
+
+keywords: nosql,database,types
+
+link: https://www.mongodb.com/nosql-explained
+
+- document databases: pair each key with a complex data structure (document)
+
+- graph stores: store info about networks, such as social connections
+
+- key-value stores: simplest NoSQL database, every single item stored as an attribute name (key)
+                    together with its value (Redis allows values to have a type, int, string, etc)
+
+- wide-column stores: optimized for queries over large datasets and store columns of data together
+                      instead of rows
+
+--- break
+
+keywords: benefits
+
+link: https://www.mongodb.com/nosql-explained
+
+- more scalable and provide superior performance
+
+- data model addresses several issues in RDMS model
+
+	- large volumes of structured, semi-structured and unstructured data
+
+	- agile springs, quick interation, and frequent code pushes
+
+	- object-oriented programming that is easy to use and flexible
+
+	- efficial, scale-out architecture instead of expensive, monolithic architecture
+
+--- break
+
+keywords: dyanmic,schema
+
+link: https://www.mongodb.com/nosql-explained
+
+- relational databases require that schemas be defined before you can add data
+
+- NoSQL built to allow insertion of data without a predefined schema
+
+- makes it easy to make significant app changes in real-time without service interruption
+
+--- break
+
+keywords: auto-sharding,sharding
+
+link: https://www.mongodb.com/nosql-explained
+
+- because of how they are structured, relation DB usually scale vertically
+
+- NoSQL databases usually support auto-sharding, meaning they natively and automatically spread
+  data across an arbitrary number of servers transparently to the application
+
+- data and query load are automatically balanced across servers
+
+--- break
+
+keywords: replication
+
+link: https://www.mongodb.com/nosql-explained
+
+- NoSQL databases also support automatic replication (storage environment is essentially virtualized
+  from developers perspective)
+
+--- break
+
+keywords: integration,cache,caching
+
+link: https://www.mongodb.com/nosql-explained
+
+- many NoSQL database technologies have excellent integrated caching capabilities
